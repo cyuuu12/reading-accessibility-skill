@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阅读辅助 · 专注阅读器</title>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#666; --accent:#1f6feb;
+    --hl-bg:#fff3cd; --hl-border:#ffc107; --fold-bg:#f6f8fa;
+    --font-size:18px; --line-height:1.7;
+  }
+  [data-theme="dark"]{ --bg:#1e1e1e; --fg:#e0e0e0; --muted:#999; --accent:#6cb6ff; --hl-bg:#3a3a1a; --hl-border:#ffc107; --fold-bg:#2a2a2a; }
+  [data-theme="sepia"]{ --bg:#f4ecd8; --fg:#3a3226; --muted:#7a6f5c; --accent:#8a5a00; --hl-bg:#e8d9a8; --hl-border:#b8860b; --fold-bg:#ede0c8; }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--fg);font-size:var(--font-size);line-height:var(--line-height);font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;}
+  header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--muted);padding:10px 16px;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  header h1{font-size:1em;margin:0;font-weight:bold;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto;}
+  .toolbar button,.toolbar select{font-size:0.85em;padding:4px 10px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer;}
+  .toolbar button:hover{border-color:var(--accent);}
+  .progress{flex-basis:100%;height:4px;background:var(--fold-bg);border-radius:2px;overflow:hidden;}
+  .progress>div{height:100%;width:0;background:var(--accent);transition:width .15s;}
+  main{max-width:780px;margin:0 auto;padding:20px 16px 80px;}
+  .seg{margin:0 0 22px;padding:14px 16px;border-left:4px solid transparent;border-radius:4px;}
+  .seg[data-pri="重点读"]{border-left-color:var(--accent);background:rgba(0,0,0,0.02);}
+  [data-theme="dark"] .seg[data-pri="重点读"]{background:rgba(255,255,255,0.04);}
+  .seg[data-pri="简单读"]{border-left-color:var(--muted);}
+  .seg[data-pri="可略读"]{border-left-color:var(--muted);opacity:.92;}
+  .seghead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;}
+  .pri{font-weight:bold;}
+  .pri[data-pri="重点读"]{color:var(--accent);}
+  .segno{color:var(--muted);font-size:.85em;}
+  .reason{color:var(--muted);font-size:.9em;margin:0 0 8px;}
+  .sent{cursor:pointer;padding:2px 4px;border-radius:3px;display:block;}
+  .sent:hover{background:var(--fold-bg);}
+  .sent.active{background:var(--hl-bg);box-shadow:inset 3px 0 0 var(--hl-border);outline:none;}
+  .fold{margin-top:8px;}
+  .fold>summary{cursor:pointer;color:var(--accent);font-size:.9em;list-style:none;}
+  .fold>summary::before{content:"▸ 展开补充 ";}
+  .fold[open]>summary::before{content:"▾ 收起 ";}
+  .skipnote{color:var(--muted);font-size:.85em;font-style:italic;margin:6px 0 0;}
+  .toggle-orig{font-size:.8em;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
+  .origtext{margin-top:6px;padding:8px 10px;background:var(--fold-bg);border-radius:4px;font-size:.95em;white-space:pre-wrap;display:none;}
+  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:.85em;color:var(--muted);z-index:10;}
+  footer button{font-size:.85em;padding:4px 12px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer;}
+  .help{font-size:.8em;color:var(--muted);max-width:780px;margin:0 auto 12px;padding:0 16px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>专注阅读器</h1>
+  <div class="toolbar">
+    <label>字号
+      <select id="fs"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select>
+    </label>
+    <label>行距
+      <select id="lh"><option value="1.5">紧凑</option><option selected value="1.7">标准</option><option value="2.0">宽松</option></select>
+    </label>
+    <label>背景
+      <select id="th"><option selected value="light">白</option><option value="sepia">护眼</option><option value="dark">深色</option></select>
+    </label>
+    <button id="modeBtn" title="切换阅读模式">模式：完整</button>
+    <button id="origAll" title="全部显示辅助版">辅助版</button>
+  </div>
+  <div class="progress"><div id="pbar"></div></div>
+</header>
+<div class="help">提示：点击任意句子高亮定位；← → 切换上一句/下一句；点击"展开补充"查看折叠内容；每段可切换原文。</div>
+<main id="root"></main>
+<footer>
+  <span id="pos">未开始</span>
+  <span><button id="prev">← 上一句</button> <button id="next">下一句 →</button></span>
+</footer>
+<script>
+const DATA = {"title": "化合物X吸收机制 — 辅助阅读版", "mode": "聚焦阅读", "high_risk": true, "segments": [{"seg_no": 1, "priority": "简单读", "reason": "研究引言，快速过即可。", "skip_note": null, "original": "本研究旨在探讨化合物X在酸性环境下的吸收机制。", "sentences": ["本研究探讨化合物X在酸性环境下的吸收机制。"], "foldable": false}, {"seg_no": 2, "priority": "重点读", "reason": "主结论与剂量上限、禁忌条件，必须优先阅读。", "skip_note": null, "original": "结论：化合物X在pH低于3时吸收效率最高，但每日剂量不得超过40mg，肾功能不全者禁用。", "sentences": ["结论：化合物X在pH低于3时吸收效率最高。", "但每日剂量不得超过40mg。", "肾功能不全者禁用。"], "foldable": false}, {"seg_no": 3, "priority": "重点读", "reason": "含因果、条件、禁忌与停药条件，关键信息密集。", "skip_note": null, "original": "由于该化合物在酸性环境下的稳定性显著高于中性环境，因此其在胃肠道内的吸收效率受到多种因素的共同影响。举例来说，当pH值低于3时，其分子构象发生不可逆变化，上述现象在多次重复实验中均得到验证。其代谢产物主要经肾脏排泄，因此肾功能不全者须慎用。若出现皮疹应立即停药并就诊。", "sentences": ["该化合物在酸性环境下比中性环境更稳定。", "因此胃肠道吸收效率受多种因素共同影响。", "举例：pH低于3时分子构象发生不可逆变化。", "此现象在多次重复实验中均得到验证。", "代谢产物主要经肾脏排泄。", "因此肾功能不全者须慎用。", "若出现皮疹应立即停药并就诊。"], "foldable": false}, {"seg_no": 4, "priority": "简单读", "reason": "前体药物背景与历史假设修正，辅助理解。", "skip_note": "略过这里会少了解背景，不影响用药结论。", "original": "背景方面，该化合物属于前体药物，在体内需经肝脏代谢转化为活性形式。此前的研究曾认为其在中性环境下吸收更好，但后续实验推翻了这一假设。", "sentences": ["背景：该化合物属于前体药物。", "在体内需经肝脏代谢转化为活性形式。", "此前研究曾认为中性环境下吸收更好。", "但后续实验推翻了这一假设。"], "foldable": true}, {"seg_no": 5, "priority": "可略读", "reason": "重复举例，与段3结论重复。", "skip_note": "略过这里会少了解一个实验细节，不影响主要结论；可展开。", "original": "举例来说，某实验中给药后30分钟即达血药浓度峰值，这一现象在多次重复给药后依然成立。", "sentences": ["举例：某实验中给药后30分钟即达血药浓度峰值。", "此现象在多次重复给药后依然成立。"], "foldable": true}]};
+const root=document.getElementById('root');
+let sents=[]; // {el, segNo, idx}
+let cur=-1;
+let view='assisted'; // assisted | original
+let mode=DATA.mode||'完整阅读';
+
+function render(){
+  root.innerHTML=''; sents=[];
+  DATA.segments.forEach(seg=>{
+    const d=document.createElement('div');
+    d.className='seg'; d.dataset.pri=seg.priority;
+    const head=document.createElement('div'); head.className='seghead';
+    const pri=document.createElement('span'); pri.className='pri'; pri.dataset.pri=seg.priority; pri.textContent=seg.priority; pri.style.fontWeight='bold';
+    const no=document.createElement('span'); no.className='segno'; no.textContent='段 '+seg.seg_no;
+    head.appendChild(pri); head.appendChild(no); d.appendChild(head);
+    const r=document.createElement('p'); r.className='reason'; r.textContent='原因：'+seg.reason; d.appendChild(r);
+
+    // content area
+    const content=document.createElement('div'); content.className='content';
+    const assisted=document.createElement('div'); assisted.className='assisted';
+    (seg.sentences||[]).forEach((s,i)=>{
+      const sp=document.createElement('span'); sp.className='sent'; sp.textContent=s; sp.tabIndex=0;
+      sp.addEventListener('click',()=>focusAt(sents.findIndex(x=>x.el===sp)));
+      assisted.appendChild(sp);
+      sents.push({el:sp,segNo:seg.seg_no,idx:i});
+    });
+    content.appendChild(assisted);
+
+    const orig=document.createElement('div'); orig.className='origtext'; orig.textContent=seg.original||''; content.appendChild(orig);
+    d.appendChild(content);
+
+    // foldable low-priority
+    if(seg.foldable && seg.priority==='可略读'){
+      const f=document.createElement('details'); f.className='fold';
+      const sum=document.createElement('summary'); sum.textContent='（可略读内容）';
+      const inner=document.createElement('div'); inner.textContent=seg.original||'';
+      f.appendChild(sum); f.appendChild(inner);
+      if(mode!=='聚焦阅读') f.open=true;
+      d.appendChild(f);
+    }
+    if(seg.skip_note){ const sn=document.createElement('p'); sn.className='skipnote'; sn.textContent=seg.skip_note; d.appendChild(sn); }
+    const tog=document.createElement('span'); tog.className='toggle-orig'; tog.textContent='查看原文';
+    tog.addEventListener('click',()=>{ orig.style.display = orig.style.display==='block'?'none':'block'; tog.textContent = orig.style.display==='block'?'返回辅助版':'查看原文'; });
+    d.appendChild(tog);
+    root.appendChild(d);
+  });
+  applyView();
+  updatePos();
+}
+
+function applyView(){
+  document.querySelectorAll('.assisted').forEach(e=>e.style.display = view==='assisted'?'block':'none');
+  document.querySelectorAll('.origtext').forEach(e=>e.style.display = view==='original'?'block':'none');
+}
+
+function focusAt(i){
+  if(i<0||i>=sents.length) return;
+  if(cur>=0) sents[cur].el.classList.remove('active');
+  cur=i; sents[i].el.classList.add('active');
+  sents[i].el.scrollIntoView({block:'center',behavior:'smooth'});
+  updatePos();
+}
+function updatePos(){
+  const pbar=document.getElementById('pbar');
+  const pct = sents.length? ((cur+1)/sents.length*100):0;
+  pbar.style.width=pct+'%';
+  document.getElementById('pos').textContent = cur>=0 ? `段 ${sents[cur].segNo} · 第 ${cur+1}/${sents.length} 句` : '未开始';
+}
+document.getElementById('next').addEventListener('click',()=>focusAt(Math.min(cur+1,sents.length-1)));
+document.getElementById('prev').addEventListener('click',()=>focusAt(Math.max(cur-1,0)));
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') focusAt(Math.min(cur+1,sents.length-1));
+  if(e.key==='ArrowLeft') focusAt(Math.max(cur-1,0));
+});
+document.getElementById('fs').addEventListener('change',e=>document.documentElement.style.setProperty('--font-size',e.target.value+'px'));
+document.getElementById('lh').addEventListener('change',e=>document.documentElement.style.setProperty('--line-height',e.target.value));
+document.getElementById('th').addEventListener('change',e=>document.documentElement.setAttribute('data-theme',e.target.value));
+document.getElementById('origAll').addEventListener('click',()=>{ view = view==='assisted'?'original':'assisted'; document.getElementById('origAll').textContent = view==='assisted'?'辅助版':'原文版'; applyView(); });
+document.getElementById('modeBtn').addEventListener('click',()=>{
+  const modes=['完整阅读','聚焦阅读','快速浏览']; let i=modes.indexOf(mode); i=(i+1)%modes.length; mode=modes[i];
+  document.getElementById('modeBtn').textContent='模式：'+mode.replace('阅读','');
+  render();
+});
+render();
+</script>
+</body>
+</html>
