@@ -34,17 +34,29 @@ import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_TEMPLATE = os.path.join(HERE, '..', 'assets', 'reader_template.html')
-SENT_SPLIT = re.compile(r'[。！？；]')
+SENT_SPLIT = re.compile(r'([。！？；.!?])')
 
 
 def split_sentences(text):
+    """按全角/半角句末标点切句，保留原标点，不替换不补加。"""
     parts = SENT_SPLIT.split(text)
     out = []
+    buf = ""
     for p in parts:
-        p = p.strip()
-        if p:
-            out.append(p + ('。' if not p.endswith(('。', '！', '？', '；')) else ''))
-    return out or [text.strip()]
+        if not p:
+            continue
+        if SENT_SPLIT.fullmatch(p):
+            buf += p
+            if buf.strip():
+                out.append(buf)
+            buf = ""
+        else:
+            if buf.strip():
+                out.append(buf)
+            buf = p
+    if buf.strip():
+        out.append(buf)
+    return [s.strip() for s in out if s.strip()] or [text.strip()]
 
 
 def build_data_from_text(text, title="阅读辅助"):

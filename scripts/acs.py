@@ -35,8 +35,8 @@ def build_common_chars():
 
 COMMON_CHARS = build_common_chars()
 
-# 句子切分：。！？；
-SENT_SPLIT = re.compile(r'[。！？；]')
+# 句子切分：全角 。！？； 与半角 .!?;（英文句末）
+SENT_SPLIT = re.compile(r'[。！？；.!?;]')
 # 代词
 PRONOUNS = ['它', '它们', '其', '该', '此', '这', '那', '上述', '本人', '自己', '他', '她', '他们', '她们']
 # 嵌套标记

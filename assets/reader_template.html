@@ -6,66 +6,77 @@
 <title>阅读辅助 · 专注阅读器</title>
 <style>
   :root{
-    --bg:#ffffff; --fg:#1a1a1a; --muted:#666; --accent:#1f6feb;
-    --hl-bg:#fff3cd; --hl-border:#ffc107; --fold-bg:#f6f8fa;
-    --font-size:18px; --line-height:1.7;
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#555; --accent:#1f6feb; --pri-simple:#1a7f37; --pri-skip:#6b7280;
+    --hl-bg:#fff3cd; --hl-border:#e0a800; --fold-bg:#f6f8fa; --card-bg:#f0f3f7;
+    --reader-font-size:18px; --reader-line-height:1.7;
   }
-  [data-theme="dark"]{ --bg:#1e1e1e; --fg:#e0e0e0; --muted:#999; --accent:#6cb6ff; --hl-bg:#3a3a1a; --hl-border:#ffc107; --fold-bg:#2a2a2a; }
-  [data-theme="sepia"]{ --bg:#f4ecd8; --fg:#3a3226; --muted:#7a6f5c; --accent:#8a5a00; --hl-bg:#e8d9a8; --hl-border:#b8860b; --fold-bg:#ede0c8; }
+  [data-theme="dark"]{ --bg:#1e1e1e; --fg:#e6e6e6; --muted:#9a9a9a; --accent:#6cb6ff; --pri-simple:#52c98a; --pri-skip:#9a9a9a; --hl-bg:#3a3a1a; --hl-border:#ffc107; --fold-bg:#2a2a2a; --card-bg:#262626; }
+  [data-theme="sepia"]{ --bg:#f4ecd8; --fg:#2e2a20; --muted:#6f6450; --accent:#8a5a00; --pri-simple:#3f6b1c; --pri-skip:#7a6f5c; --hl-bg:#e8d9a8; --hl-border:#b8860b; --fold-bg:#ede0c8; --card-bg:#e8dcc4; }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--fg);font-size:var(--font-size);line-height:var(--line-height);font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;}
-  header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--muted);padding:10px 16px;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-  header h1{font-size:1em;margin:0;font-weight:bold;}
-  .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto;}
-  .toolbar button,.toolbar select{font-size:0.85em;padding:4px 10px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer;}
-  .toolbar button:hover{border-color:var(--accent);}
-  .progress{flex-basis:100%;height:4px;background:var(--fold-bg);border-radius:2px;overflow:hidden;}
+  html,body{overflow-x:hidden;}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;}
+  header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--muted);padding:8px 12px;z-index:10;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .toolbar h1{font-size:1em;margin:0 8px 0 0;font-weight:bold;white-space:nowrap;}
+  .toolbar .spacer{flex:1 1 100%;height:0;}
+  .toolbar label{font-size:.8em;display:inline-flex;align-items:center;gap:4px;}
+  .tbtn,.toolbar select{font-size:.85em;min-height:44px;min-width:44px;padding:6px 12px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer;line-height:1.2;}
+  .tbtn:hover,.toolbar select:hover{border-color:var(--accent);}
+  .tbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .progress{height:4px;background:var(--fold-bg);border-radius:2px;overflow:hidden;margin-top:8px;}
   .progress>div{height:100%;width:0;background:var(--accent);transition:width .15s;}
-  main{max-width:780px;margin:0 auto;padding:20px 16px 80px;}
-  .seg{margin:0 0 22px;padding:14px 16px;border-left:4px solid transparent;border-radius:4px;}
-  .seg[data-pri="重点读"]{border-left-color:var(--accent);background:rgba(0,0,0,0.02);}
-  [data-theme="dark"] .seg[data-pri="重点读"]{background:rgba(255,255,255,0.04);}
-  .seg[data-pri="简单读"]{border-left-color:var(--muted);}
-  .seg[data-pri="可略读"]{border-left-color:var(--muted);opacity:.92;}
-  .seghead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;}
-  .pri{font-weight:bold;}
+  .help{font-size:.78em;color:var(--muted);margin:6px 0 0;}
+  main{max-width:780px;margin:0 auto;padding:18px 14px 90px;}
+  .seg{margin:0 0 20px;padding:12px 14px;border-left:4px solid var(--muted);border-radius:4px;}
+  .seg[data-pri="重点读"]{border-left-color:var(--accent);}
+  .seg[data-pri="简单读"]{border-left-color:var(--pri-simple);}
+  .seg[data-pri="可略读"]{border-left-color:var(--pri-skip);}
+  .seghead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:6px;}
+  .pri{font-weight:bold;font-size:1.02em;}
   .pri[data-pri="重点读"]{color:var(--accent);}
-  .segno{color:var(--muted);font-size:.85em;}
-  .reason{color:var(--muted);font-size:.9em;margin:0 0 8px;}
-  .sent{cursor:pointer;padding:2px 4px;border-radius:3px;display:block;}
-  .sent:hover{background:var(--fold-bg);}
+  .pri[data-pri="简单读"]{color:var(--pri-simple);}
+  .pri[data-pri="可略读"]{color:var(--pri-skip);}
+  .segno{color:var(--muted);font-size:.82em;}
+  .reason{color:var(--muted);font-size:.88em;margin:0 0 8px;width:100%;}
+  .segbody{font-size:var(--reader-font-size);line-height:var(--reader-line-height);}
+  .sent{cursor:text;padding:1px 3px;border-radius:3px;display:block;}
+  .sent.hl-on{cursor:pointer;}
+  .sent.hl-on:hover{background:var(--fold-bg);}
   .sent.active{background:var(--hl-bg);box-shadow:inset 3px 0 0 var(--hl-border);outline:none;}
-  .fold{margin-top:8px;}
-  .fold>summary{cursor:pointer;color:var(--accent);font-size:.9em;list-style:none;}
-  .fold>summary::before{content:"▸ 展开补充 ";}
-  .fold[open]>summary::before{content:"▾ 收起 ";}
-  .skipnote{color:var(--muted);font-size:.85em;font-style:italic;margin:6px 0 0;}
-  .toggle-orig{font-size:.8em;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
-  .origtext{margin-top:6px;padding:8px 10px;background:var(--fold-bg);border-radius:4px;font-size:.95em;white-space:pre-wrap;display:none;}
-  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 16px;display:flex;justify-content:space-between;align-items:center;font-size:.85em;color:var(--muted);z-index:10;}
-  footer button{font-size:.85em;padding:4px 12px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:4px;cursor:pointer;}
-  .help{font-size:.8em;color:var(--muted);max-width:780px;margin:0 auto 12px;padding:0 16px;}
+  .origtext{white-space:pre-wrap;}
+  .fold-wrap{margin-top:6px;}
+  .fold-wrap>summary{cursor:pointer;color:var(--accent);font-size:.9em;list-style:none;min-height:44px;display:flex;align-items:center;padding:4px 0;}
+  .fold-wrap>summary::before{content:"▸ 展开本段 ";margin-right:4px;}
+  .fold-wrap[open]>summary::before{content:"▾ 收起 ";}
+  .skipnote{color:var(--muted);font-size:.84em;font-style:italic;margin:6px 0 0;}
+  .segfoot{margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .segfoot button{font-size:.78em;min-height:36px;padding:4px 10px;border:1px solid var(--muted);background:var(--bg);color:var(--muted);border-radius:5px;cursor:pointer;}
+  .segfoot button:hover{color:var(--accent);border-color:var(--accent);}
+  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.82em;color:var(--muted);z-index:10;}
+  footer button{font-size:.85em;min-height:44px;min-width:44px;padding:6px 14px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer;}
+  @media(max-width:600px){
+    main{padding:14px 10px 90px;}
+    .toolbar{gap:4px;}
+    .toolbar label{font-size:.75em;}
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>专注阅读器</h1>
   <div class="toolbar">
-    <label>字号
-      <select id="fs"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select>
-    </label>
-    <label>行距
-      <select id="lh"><option value="1.5">紧凑</option><option selected value="1.7">标准</option><option value="2.0">宽松</option></select>
-    </label>
-    <label>背景
-      <select id="th"><option selected value="light">白</option><option value="sepia">护眼</option><option value="dark">深色</option></select>
-    </label>
-    <button id="modeBtn" title="切换阅读模式">模式：完整</button>
-    <button id="origAll" title="全部显示辅助版">辅助版</button>
+    <h1>专注阅读器</h1>
+    <label>字号<select id="fs"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select></label>
+    <label>行距<select id="lh"><option value="1.5">紧凑</option><option selected value="1.7">标准</option><option value="2.0">宽松</option></select></label>
+    <label>背景<select id="th"><option selected value="light">白</option><option value="sepia">护眼</option><option value="dark">深色</option></select></label>
+    <button class="tbtn" id="modeBtn">模式：完整</button>
+    <button class="tbtn" id="hlBtn">高亮：关</button>
+    <button class="tbtn" id="origAll">辅助版</button>
+    <button class="tbtn" id="expandAll">全部展开</button>
+    <div class="spacer"></div>
+    <div class="progress"><div id="pbar"></div></div>
+    <div class="help">提示：开启高亮后点句定位，← → 切换上下句；可调字号/行距/背景；每段可切原文。</div>
   </div>
-  <div class="progress"><div id="pbar"></div></div>
 </header>
-<div class="help">提示：点击任意句子高亮定位；← → 切换上一句/下一句；点击"展开补充"查看折叠内容；每段可切换原文。</div>
 <main id="root"></main>
 <footer>
   <span id="pos">未开始</span>
@@ -74,89 +85,118 @@
 <script>
 const DATA = __READER_DATA__;
 const root=document.getElementById('root');
-let sents=[]; // {el, segNo, idx}
-let cur=-1;
-let view='assisted'; // assisted | original
-let mode=DATA.mode||'完整阅读';
+const LS_KEY='reading-accessibility';
+let state=Object.assign({fs:'18',lh:'1.7',th:'light',mode:DATA.mode||'完整阅读',hl:false,view:'assisted',cur:-1}, loadLS());
+let segView={}; // segNo -> 'assisted'|'original'，未设置则跟随 state.view
 
+function loadLS(){ try{return JSON.parse(localStorage.getItem(LS_KEY))||{};}catch(e){return {};} }
+function saveLS(){ try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh:state.lh,th:state.th,mode:state.mode,hl:state.hl,view:state.view,cur:state.cur}));}catch(e){} }
+
+function applySettings(){
+  document.documentElement.style.setProperty('--reader-font-size',state.fs+'px');
+  document.documentElement.style.setProperty('--reader-line-height',state.lh);
+  document.documentElement.setAttribute('data-theme',state.th);
+  document.getElementById('fs').value=state.fs;
+  document.getElementById('lh').value=state.lh;
+  document.getElementById('th').value=state.th;
+  document.getElementById('modeBtn').textContent='模式：'+state.mode.replace('阅读','');
+  const hlB=document.getElementById('hlBtn'); hlB.textContent='高亮：'+(state.hl?'开':'关'); hlB.classList.toggle('on',state.hl);
+  document.getElementById('origAll').textContent=state.view==='assisted'?'辅助版':'原文版';
+}
+
+let sents=[];
 function render(){
   root.innerHTML=''; sents=[];
   DATA.segments.forEach(seg=>{
-    const d=document.createElement('div');
-    d.className='seg'; d.dataset.pri=seg.priority;
+    const d=document.createElement('section'); d.className='seg'; d.dataset.pri=seg.priority; d.dataset.seg=seg.seg_no;
     const head=document.createElement('div'); head.className='seghead';
-    const pri=document.createElement('span'); pri.className='pri'; pri.dataset.pri=seg.priority; pri.textContent=seg.priority; pri.style.fontWeight='bold';
+    const pri=document.createElement('span'); pri.className='pri'; pri.dataset.pri=seg.priority; pri.textContent=seg.priority;
     const no=document.createElement('span'); no.className='segno'; no.textContent='段 '+seg.seg_no;
-    head.appendChild(pri); head.appendChild(no); d.appendChild(head);
-    const r=document.createElement('p'); r.className='reason'; r.textContent='原因：'+seg.reason; d.appendChild(r);
+    head.appendChild(pri); head.appendChild(no);
+    const r=document.createElement('p'); r.className='reason'; r.textContent=seg.reason; head.appendChild(r);
+    d.appendChild(head);
 
-    // content area
-    const content=document.createElement('div'); content.className='content';
+    // 段体：辅助版 + 原文，二选一显示，不重复
+    const body=document.createElement('div'); body.className='segbody';
     const assisted=document.createElement('div'); assisted.className='assisted';
-    (seg.sentences||[]).forEach((s,i)=>{
-      const sp=document.createElement('span'); sp.className='sent'; sp.textContent=s; sp.tabIndex=0;
-      sp.addEventListener('click',()=>focusAt(sents.findIndex(x=>x.el===sp)));
-      assisted.appendChild(sp);
-      sents.push({el:sp,segNo:seg.seg_no,idx:i});
+    (seg.sentences||[seg.original||'']).forEach((s,i)=>{
+      const sp=document.createElement('span'); sp.className='sent'; sp.textContent=s;
+      sp.addEventListener('click',()=>{ if(state.hl) focusAt(sents.findIndex(x=>x.el===sp)); });
+      assisted.appendChild(sp); sents.push({el:sp,segNo:seg.seg_no,idx:i});
     });
-    content.appendChild(assisted);
+    const orig=document.createElement('div'); orig.className='origtext'; orig.textContent=seg.original||'';
+    body.appendChild(assisted); body.appendChild(orig);
+    d.appendChild(body);
 
-    const orig=document.createElement('div'); orig.className='origtext'; orig.textContent=seg.original||''; content.appendChild(orig);
-    d.appendChild(content);
-
-    // foldable low-priority
-    if(seg.foldable && seg.priority==='可略读'){
-      const f=document.createElement('details'); f.className='fold';
-      const sum=document.createElement('summary'); sum.textContent='（可略读内容）';
-      const inner=document.createElement('div'); inner.textContent=seg.original||'';
-      f.appendChild(sum); f.appendChild(inner);
-      if(mode!=='聚焦阅读') f.open=true;
-      d.appendChild(f);
+    // 折叠：仅对可折叠段，且不重复渲染正文——把 body 包进 details
+    const foldable = seg.foldable && (seg.priority==='可略读' || seg.priority==='简单读');
+    const collapse = foldable && (state.mode==='聚焦阅读' && seg.priority==='可略读' || state.mode==='快速浏览' && seg.priority!=='重点读');
+    if(collapse){
+      const det=document.createElement('details'); det.className='fold-wrap';
+      const sum=document.createElement('summary'); sum.textContent=seg.skip_note||'折叠内容，可展开查看';
+      det.appendChild(sum); det.appendChild(body);
+      det.open=false;
+      d.appendChild(det);
+    } else {
+      d.appendChild(body);
     }
+
     if(seg.skip_note){ const sn=document.createElement('p'); sn.className='skipnote'; sn.textContent=seg.skip_note; d.appendChild(sn); }
-    const tog=document.createElement('span'); tog.className='toggle-orig'; tog.textContent='查看原文';
-    tog.addEventListener('click',()=>{ orig.style.display = orig.style.display==='block'?'none':'block'; tog.textContent = orig.style.display==='block'?'返回辅助版':'查看原文'; });
-    d.appendChild(tog);
+
+    // 单段原文/辅助切换
+    const foot=document.createElement('div'); foot.className='segfoot';
+    const tog=document.createElement('button'); tog.textContent='查看原文';
+    tog.addEventListener('click',()=>{ toggleSegView(seg.seg_no); refreshSegView(d,seg); tog.textContent=segView[seg.seg_no]==='original'?'返回辅助版':'查看原文'; });
+    foot.appendChild(tog); d.appendChild(foot);
+
     root.appendChild(d);
+    refreshSegView(d,seg);
   });
-  applyView();
+  // 恢复焦点位置
+  if(state.cur>=0 && state.cur<sents.length){ sents[state.cur].el.classList.add('active'); }
   updatePos();
 }
 
-function applyView(){
-  document.querySelectorAll('.assisted').forEach(e=>e.style.display = view==='assisted'?'block':'none');
-  document.querySelectorAll('.origtext').forEach(e=>e.style.display = view==='original'?'block':'none');
+function segViewOf(n){ return segView[n]||state.view; }
+function toggleSegView(n){ segView[n]= segViewOf(n)==='assisted'?'original':'assisted'; }
+function refreshSegView(d,seg){
+  const v=segViewOf(seg.seg_no);
+  const a=d.querySelector('.assisted'), o=d.querySelector('.origtext');
+  if(a) a.style.display = v==='assisted'?'block':'none';
+  if(o) o.style.display = v==='original'?'block':'none';
 }
 
 function focusAt(i){
-  if(i<0||i>=sents.length) return;
-  if(cur>=0) sents[cur].el.classList.remove('active');
-  cur=i; sents[i].el.classList.add('active');
+  if(!state.hl || i<0||i>=sents.length) return;
+  if(state.cur>=0 && sents[state.cur]) sents[state.cur].el.classList.remove('active');
+  state.cur=i; sents[i].el.classList.add('active');
   sents[i].el.scrollIntoView({block:'center',behavior:'smooth'});
-  updatePos();
+  updatePos(); saveLS();
 }
 function updatePos(){
   const pbar=document.getElementById('pbar');
-  const pct = sents.length? ((cur+1)/sents.length*100):0;
+  const pct=sents.length?((state.cur+1)/sents.length*100):0;
   pbar.style.width=pct+'%';
-  document.getElementById('pos').textContent = cur>=0 ? `段 ${sents[cur].segNo} · 第 ${cur+1}/${sents.length} 句` : '未开始';
+  document.getElementById('pos').textContent = state.cur>=0 ? `段 ${sents[state.cur].segNo} · 第 ${state.cur+1}/${sents.length} 句` : '未开始';
 }
-document.getElementById('next').addEventListener('click',()=>focusAt(Math.min(cur+1,sents.length-1)));
-document.getElementById('prev').addEventListener('click',()=>focusAt(Math.max(cur-1,0)));
+
+// 事件
+document.getElementById('next').addEventListener('click',()=>focusAt(Math.min(state.cur+1,sents.length-1)));
+document.getElementById('prev').addEventListener('click',()=>focusAt(Math.max(state.cur-1,0)));
 document.addEventListener('keydown',e=>{
-  if(e.key==='ArrowRight') focusAt(Math.min(cur+1,sents.length-1));
-  if(e.key==='ArrowLeft') focusAt(Math.max(cur-1,0));
+  if(e.target.tagName==='SELECT') return;
+  if(e.key==='ArrowRight') focusAt(Math.min(state.cur+1,sents.length-1));
+  if(e.key==='ArrowLeft') focusAt(Math.max(state.cur-1,0));
 });
-document.getElementById('fs').addEventListener('change',e=>document.documentElement.style.setProperty('--font-size',e.target.value+'px'));
-document.getElementById('lh').addEventListener('change',e=>document.documentElement.style.setProperty('--line-height',e.target.value));
-document.getElementById('th').addEventListener('change',e=>document.documentElement.setAttribute('data-theme',e.target.value));
-document.getElementById('origAll').addEventListener('click',()=>{ view = view==='assisted'?'original':'assisted'; document.getElementById('origAll').textContent = view==='assisted'?'辅助版':'原文版'; applyView(); });
-document.getElementById('modeBtn').addEventListener('click',()=>{
-  const modes=['完整阅读','聚焦阅读','快速浏览']; let i=modes.indexOf(mode); i=(i+1)%modes.length; mode=modes[i];
-  document.getElementById('modeBtn').textContent='模式：'+mode.replace('阅读','');
-  render();
-});
-render();
+document.getElementById('fs').addEventListener('change',e=>{state.fs=e.target.value;applySettings();saveLS();});
+document.getElementById('lh').addEventListener('change',e=>{state.lh=e.target.value;applySettings();saveLS();});
+document.getElementById('th').addEventListener('change',e=>{state.th=e.target.value;applySettings();saveLS();});
+document.getElementById('hlBtn').addEventListener('click',()=>{state.hl=!state.hl;applySettings();document.querySelectorAll('.sent').forEach(s=>s.classList.toggle('hl-on',state.hl));if(!state.hl){document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));state.cur=-1;updatePos();}saveLS();});
+document.getElementById('origAll').addEventListener('click',()=>{state.view=state.view==='assisted'?'original':'assisted';segView={};applySettings();document.querySelectorAll('.seg').forEach(d=>{const n=+d.dataset.seg;const seg=DATA.segments.find(s=>s.seg_no===n);refreshSegView(d,seg);d.querySelector('.segfoot button').textContent=state.view==='original'?'返回辅助版':'查看原文';});saveLS();});
+document.getElementById('modeBtn').addEventListener('click',()=>{const ms=['完整阅读','聚焦阅读','快速浏览'];let i=ms.indexOf(state.mode);i=(i+1)%ms.length;state.mode=ms[i];applySettings();render();saveLS();});
+document.getElementById('expandAll').addEventListener('click',()=>{document.querySelectorAll('.fold-wrap').forEach(d=>d.open=true);});
+
+applySettings(); render();
 </script>
 </body>
 </html>
