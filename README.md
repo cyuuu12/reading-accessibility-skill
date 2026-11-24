@@ -1,8 +1,8 @@
-# 阅读辅助 Skill（Reading Accessibility）V2.1
+# 阅读辅助 Skill（Reading Accessibility）V2.2
 
 面向"阅读困难"的文本辅助工具（非医学诊断）。以可计算的**文本结构复杂度（ACS）**为底座，对文本做结构简化、阅读优先级标注、逐段辅助与保真校验，输出更易集中注意力阅读的版本。
 
-V2.1 在 V2.0 基础上做增量修复：段落丢失与模式失效、三层阅读机制重建、模块化理解框架、语义优先路由、交互修复、移动端适配、ACS 用户端隐藏、测试增强。
+V2.2 在 V2.1 基础上：引入统一处理层（analyze.py）、段内语义单元路由、60% 上限自检、Markdown 大幅简化、HTML 交互修复（段内局部折叠/高亮弱化/橙红色优先级/折叠入口简化）。
 
 ## 核心定位
 - **文本结构复杂度**（ACS，客观可计算）≠ **用户主观阅读负荷**（因人而异）≠ **阅读优先级**（内容结构 + 用户目标）。三者分开处理，不可互换。
@@ -30,7 +30,7 @@ reading_accessibility/
 ├── SKILL.md
 ├── references/   attention_model.md · transforms.md · routing.md
 ├── assets/       attention_map_template.md · focus_version_template.md · reader_template.html
-├── scripts/      acs.py · fidelity_check.py · build_reader.py
+├── scripts/      acs.py · analyze.py · fidelity_check.py · build_reader.py
 └── tests/        run_tests.py · demo_data.json · demo_reader.html · demo_chat.md
 ```
 
@@ -39,7 +39,7 @@ reading_accessibility/
 python scripts/acs.py input.txt                              # 结构复杂度
 python scripts/fidelity_check.py original.txt rewritten.txt  # 保真校验
 python scripts/build_reader.py data.json output.html         # 生成 HTML 阅读器
-python tests/run_tests.py                                    # 运行 71 项测试
+python tests/run_tests.py                                    # 运行 100 项测试
 ```
 
 ## 演示
@@ -53,7 +53,7 @@ tests/demo_chat.md
 ## 测试
 ```bash
 python tests/run_tests.py
-# 通过 71 / 失败 0 / 共 71
+# 通过 100 / 失败 0 / 共 100
 ```
 覆盖：frontmatter 校验、触发、路由语义优先、三层机制、ACS 用户端隐藏、ACS 中英混排切句、切句保留原标点、测试文本 6 段、原文完整性、中英混排保留 karma/缘分、HTML 数据结构/字号变量/viewport/触摸目标/语义色/离线/localStorage/安全转义/折叠去重、保真（条件/因果/比较/范围/不确定性/翻译文本）、Markdown 与地图模板、V1 回归。
 

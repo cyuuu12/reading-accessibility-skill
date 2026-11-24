@@ -6,12 +6,13 @@
 <title>阅读辅助 · 专注阅读器</title>
 <style>
   :root{
-    --bg:#ffffff; --fg:#1a1a1a; --muted:#555; --accent:#1f6feb; --pri-simple:#1a7f37; --pri-skip:#6b7280;
+    --bg:#ffffff; --fg:#1a1a1a; --muted:#555; --accent:#1f6feb;
+    --pri-focus:#d4502a; --pri-simple:#1a7f37; --pri-skip:#6b7280;
     --hl-bg:#fff3cd; --hl-border:#e0a800; --fold-bg:#f6f8fa; --card-bg:#f0f3f7;
     --reader-font-size:18px; --reader-line-height:1.7;
   }
-  [data-theme="dark"]{ --bg:#1e1e1e; --fg:#e6e6e6; --muted:#9a9a9a; --accent:#6cb6ff; --pri-simple:#52c98a; --pri-skip:#9a9a9a; --hl-bg:#3a3a1a; --hl-border:#ffc107; --fold-bg:#2a2a2a; --card-bg:#262626; }
-  [data-theme="sepia"]{ --bg:#f4ecd8; --fg:#2e2a20; --muted:#6f6450; --accent:#8a5a00; --pri-simple:#3f6b1c; --pri-skip:#7a6f5c; --hl-bg:#e8d9a8; --hl-border:#b8860b; --fold-bg:#ede0c8; --card-bg:#e8dcc4; }
+  [data-theme="dark"]{ --bg:#1e1e1e; --fg:#e6e6e6; --muted:#9a9a9a; --accent:#6cb6ff; --pri-focus:#ff6b3d; --pri-simple:#52c98a; --pri-skip:#9a9a9a; --hl-bg:#3a3a1a; --hl-border:#ffc107; --fold-bg:#2a2a2a; --card-bg:#262626; }
+  [data-theme="sepia"]{ --bg:#f4ecd8; --fg:#2e2a20; --muted:#6f6450; --accent:#8a5a00; --pri-focus:#8a5a00; --pri-simple:#3f6b1c; --pri-skip:#7a6f5c; --hl-bg:#e8d9a8; --hl-border:#b8860b; --fold-bg:#ede0c8; --card-bg:#e8dcc4; }
   *{box-sizing:border-box;}
   html,body{overflow-x:hidden;}
   body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif;}
@@ -23,17 +24,19 @@
   .tbtn,.toolbar select{font-size:.85em;min-height:44px;min-width:44px;padding:6px 12px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer;line-height:1.2;}
   .tbtn:hover,.toolbar select:hover{border-color:var(--accent);}
   .tbtn.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tbtn:disabled{opacity:.4;cursor:default;}
   .progress{height:4px;background:var(--fold-bg);border-radius:2px;overflow:hidden;margin-top:8px;}
   .progress>div{height:100%;width:0;background:var(--accent);transition:width .15s;}
   .help{font-size:.78em;color:var(--muted);margin:6px 0 0;}
   main{max-width:780px;margin:0 auto;padding:18px 14px 90px;}
-  .seg{margin:0 0 20px;padding:12px 14px;border-left:4px solid var(--muted);border-radius:4px;}
-  .seg[data-pri="重点读"]{border-left-color:var(--accent);}
+  .seg{margin:0 0 20px;padding:12px 14px;border-left:4px solid var(--muted);border-radius:4px;transition:opacity .15s;}
+  .seg[data-pri="重点读"]{border-left-color:var(--pri-focus);}
   .seg[data-pri="简单读"]{border-left-color:var(--pri-simple);}
   .seg[data-pri="可略读"]{border-left-color:var(--pri-skip);}
+  .seg.dimmed{opacity:.85;}
   .seghead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px;margin-bottom:6px;}
   .pri{font-weight:bold;font-size:1.02em;}
-  .pri[data-pri="重点读"]{color:var(--accent);}
+  .pri[data-pri="重点读"]{color:var(--pri-focus);}
   .pri[data-pri="简单读"]{color:var(--pri-simple);}
   .pri[data-pri="可略读"]{color:var(--pri-skip);}
   .segno{color:var(--muted);font-size:.82em;}
@@ -44,11 +47,16 @@
   .sent.hl-on:hover{background:var(--fold-bg);}
   .sent.active{background:var(--hl-bg);box-shadow:inset 3px 0 0 var(--hl-border);outline:none;}
   .origtext{white-space:pre-wrap;}
+  /* 段内局部折叠 */
+  .unit-fold{margin:4px 0;padding:6px 10px;background:var(--fold-bg);border-radius:4px;}
+  .unit-fold>summary{cursor:pointer;color:var(--muted);font-size:.88em;list-style:none;min-height:36px;display:flex;align-items:center;}
+  .unit-fold>summary::before{content:"▸ 展开本段 ";margin-right:4px;}
+  .unit-fold[open]>summary::before{content:"▾ 收起 ";}
+  /* 段级折叠 */
   .fold-wrap{margin-top:6px;}
-  .fold-wrap>summary{cursor:pointer;color:var(--accent);font-size:.9em;list-style:none;min-height:44px;display:flex;align-items:center;padding:4px 0;}
+  .fold-wrap>summary{cursor:pointer;color:var(--muted);font-size:.9em;list-style:none;min-height:44px;display:flex;align-items:center;padding:4px 0;}
   .fold-wrap>summary::before{content:"▸ 展开本段 ";margin-right:4px;}
   .fold-wrap[open]>summary::before{content:"▾ 收起 ";}
-  .skipnote{color:var(--muted);font-size:.84em;font-style:italic;margin:6px 0 0;}
   .segfoot{margin-top:8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
   .segfoot button{font-size:.78em;min-height:36px;padding:4px 10px;border:1px solid var(--muted);background:var(--bg);color:var(--muted);border-radius:5px;cursor:pointer;}
   .segfoot button:hover{color:var(--accent);border-color:var(--accent);}
@@ -59,6 +67,7 @@
     .toolbar{gap:4px;}
     .toolbar label{font-size:.75em;}
   }
+  @media(prefers-reduced-motion:reduce){ *{transition:none!important;} }
 </style>
 </head>
 <body>
@@ -83,14 +92,15 @@
   <span><button id="prev">← 上一句</button> <button id="next">下一句 →</button></span>
 </footer>
 <script>
-const DATA = {"title": "纽马克翻译理论 · 缘分词义空缺 — 辅助阅读版", "mode": "聚焦阅读", "high_risk": false, "modules": [{"title": "理论依据", "content": "纽马克区分语义翻译与交际翻译，好的翻译应平衡二者。"}, {"title": "核心问题", "content": "以缘分为代表的文化负载词在英语中存在词义空缺。"}, {"title": "解决方法", "content": "可采取借词、替代、释义三种方法填补；借词实例见《红楼梦》英译用 karma。"}, {"title": "方法局限", "content": "借词虽填补空缺，但读者须理解第三者文化新词，仍需相当精力。"}], "segments": [{"seg_no": 1, "priority": "重点读", "reason": "区分语义翻译与交际翻译，是后文分析的理论基础。", "skip_note": null, "original": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达。", "而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "好的翻译应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "foldable": false}, {"seg_no": 2, "priority": "重点读", "reason": "指出缘分的词义空缺问题与三种填补方法，是全文核心。", "skip_note": null, "original": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，", "译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "foldable": false}, {"seg_no": 3, "priority": "简单读", "reason": "借词的定义与《红楼梦》实例，可快速读。", "skip_note": "略过会少了解借词的具体例子，不影响核心结论。", "original": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "foldable": true}, {"seg_no": 4, "priority": "简单读", "reason": "中文原文引文，与译文对照。", "skip_note": null, "original": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。（第117回）"], "foldable": false}, {"seg_no": 5, "priority": "简单读", "reason": "霍译英文译文，与原文对照保留。", "skip_note": null, "original": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "foldable": false}, {"seg_no": 6, "priority": "重点读", "reason": "指出借词的弊端与方法局限，是方法评估的关键结论。", "skip_note": null, "original": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：", "读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "foldable": false}]};
+const DATA = {"title": "纽马克翻译理论 · 缘分词义空缺 — 辅助阅读版", "mode": "聚焦阅读", "high_risk": false, "modules": [{"title": "核心问题", "content": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。"}, {"title": "补充说明", "content": "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。"}, {"title": "收束", "content": "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"}, {"title": "理论依据", "content": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。"}, {"title": "实例说明", "content": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："}, {"title": "方法局限", "content": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"}], "segments": [{"seg_no": 1, "priority": "简单读", "reason": "经上限自检降级：支撑性内容，可速览。", "skip_note": null, "original": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "units": [{"text": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "role": "论点", "priority": "简单读", "reason": "引言论点，提出全文主旨。"}, {"text": "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "role": "陈述", "priority": "简单读", "reason": "支撑性陈述，可速览。"}, {"text": "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "role": "收束", "priority": "简单读", "reason": "段末收束，可速览。"}], "foldable": false}, {"seg_no": 2, "priority": "简单读", "reason": "单句段，可速览。", "skip_note": null, "original": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "units": [{"text": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "role": "陈述", "priority": "简单读", "reason": "单句段，可速览。"}], "foldable": true}, {"seg_no": 3, "priority": "重点读", "reason": "概念定义，是后续分析基础。", "skip_note": null, "original": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "units": [{"text": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "role": "定义", "priority": "重点读", "reason": "概念定义，是后续分析基础。"}, {"text": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "role": "例证", "priority": "简单读", "reason": "举例说明，可速览。"}], "foldable": false}, {"seg_no": 4, "priority": "简单读", "reason": "支撑性陈述，可速览。", "skip_note": null, "original": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。", "（第117回）"], "units": [{"text": "他何尝是真要银子呢，也只当化个善缘就是了。", "role": "陈述", "priority": "简单读", "reason": "支撑性陈述，可速览。"}, {"text": "（第117回）", "role": "陈述", "priority": "简单读", "reason": "支撑性陈述，可速览。"}], "foldable": true}, {"seg_no": 5, "priority": "简单读", "reason": "单句段，可速览。", "skip_note": null, "original": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "units": [{"text": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "role": "陈述", "priority": "简单读", "reason": "单句段，可速览。"}], "foldable": true}, {"seg_no": 6, "priority": "重点读", "reason": "指出局限或反例，影响结论成立条件。", "skip_note": null, "original": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "units": [{"text": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "role": "限定", "priority": "重点读", "reason": "指出局限或反例，影响结论成立条件。"}], "foldable": false}]};
 const root=document.getElementById('root');
 const LS_KEY='reading-accessibility';
-let state=Object.assign({fs:'18',lh:'1.7',th:'light',mode:DATA.mode||'完整阅读',hl:false,view:'assisted',cur:-1}, loadLS());
-let segView={}; // segNo -> 'assisted'|'original'，未设置则跟随 state.view
+let state=Object.assign({fs:'18',lh:'1.7',th:'light',mode:DATA.mode||'完整阅读',hl:false,view:'assisted',cur:-1,allExpanded:false}, loadLS());
+let segView={};
+let foldState={}; // segNo-unitIdx 或 segNo -> open boolean
 
 function loadLS(){ try{return JSON.parse(localStorage.getItem(LS_KEY))||{};}catch(e){return {};} }
-function saveLS(){ try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh:state.lh,th:state.th,mode:state.mode,hl:state.hl,view:state.view,cur:state.cur}));}catch(e){} }
+function saveLS(){ try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh:state.lh,th:state.th,mode:state.mode,hl:state.hl,view:state.view,cur:state.cur,allExpanded:state.allExpanded}));}catch(e){} }
 
 function applySettings(){
   document.documentElement.style.setProperty('--reader-font-size',state.fs+'px');
@@ -102,10 +112,18 @@ function applySettings(){
   document.getElementById('modeBtn').textContent='模式：'+state.mode.replace('阅读','');
   const hlB=document.getElementById('hlBtn'); hlB.textContent='高亮：'+(state.hl?'开':'关'); hlB.classList.toggle('on',state.hl);
   document.getElementById('origAll').textContent=state.view==='assisted'?'辅助版':'原文版';
+  const eb=document.getElementById('expandAll');
+  eb.textContent=state.allExpanded?'恢复折叠':'全部展开';
+  eb.disabled=!hasFoldable();
+}
+
+function hasFoldable(){
+  return DATA.segments.some(seg=>seg.foldable||seg.units&&seg.units.some(u=>u.priority!=='重点读'));
 }
 
 let sents=[];
 function render(){
+  const scrollTop=window.scrollY;
   root.innerHTML=''; sents=[];
   DATA.segments.forEach(seg=>{
     const d=document.createElement('section'); d.className='seg'; d.dataset.pri=seg.priority; d.dataset.seg=seg.seg_no;
@@ -116,32 +134,58 @@ function render(){
     const r=document.createElement('p'); r.className='reason'; r.textContent=seg.reason; head.appendChild(r);
     d.appendChild(head);
 
-    // 段体：辅助版 + 原文，二选一显示，不重复
     const body=document.createElement('div'); body.className='segbody';
     const assisted=document.createElement('div'); assisted.className='assisted';
-    (seg.sentences||[seg.original||'']).forEach((s,i)=>{
-      const sp=document.createElement('span'); sp.className='sent'; sp.textContent=s;
-      sp.addEventListener('click',()=>{ if(state.hl) focusAt(sents.findIndex(x=>x.el===sp)); });
-      assisted.appendChild(sp); sents.push({el:sp,segNo:seg.seg_no,idx:i});
-    });
+
+    // 段内语义单元渲染（支持局部折叠）
+    const units=seg.units||[];
+    const sentsList=seg.sentences||[seg.original||''];
+    if(units.length>1 && units.some(u=>u.priority!=='重点读') && (state.mode==='聚焦阅读'||state.mode==='快速浏览')){
+      // 段内局部折叠：重点读单元直接显示，非重点读单元可折叠
+      units.forEach((u,i)=>{
+        if(u.priority==='重点读'){
+          const sp=document.createElement('span'); sp.className='sent'; sp.textContent=u.text;
+          sp.addEventListener('click',()=>{ if(state.hl) focusAt(sents.findIndex(x=>x.el===sp)); });
+          assisted.appendChild(sp); sents.push({el:sp,segNo:seg.seg_no,idx:sents.length});
+        } else {
+          const det=document.createElement('details'); det.className='unit-fold';
+          const sum=document.createElement('summary'); sum.textContent='';
+          det.appendChild(sum);
+          const sp=document.createElement('span'); sp.className='sent'; sp.textContent=u.text;
+          sp.addEventListener('click',()=>{ if(state.hl) focusAt(sents.findIndex(x=>x.el===sp)); });
+          det.appendChild(sp); sents.push({el:sp,segNo:seg.seg_no,idx:sents.length});
+          const fk=seg.seg_no+'-u'+i;
+          det.open=foldState[fk]||state.allExpanded||false;
+          det.addEventListener('toggle',()=>{foldState[fk]=det.open;});
+          assisted.appendChild(det);
+        }
+      });
+    } else {
+      // 普通逐句渲染
+      sentsList.forEach((s,i)=>{
+        const sp=document.createElement('span'); sp.className='sent'; sp.textContent=s;
+        sp.addEventListener('click',()=>{ if(state.hl) focusAt(sents.findIndex(x=>x.el===sp)); });
+        assisted.appendChild(sp); sents.push({el:sp,segNo:seg.seg_no,idx:i});
+      });
+    }
+
     const orig=document.createElement('div'); orig.className='origtext'; orig.textContent=seg.original||'';
     body.appendChild(assisted); body.appendChild(orig);
     d.appendChild(body);
 
-    // 折叠：仅对可折叠段，且不重复渲染正文——把 body 包进 details
+    // 段级折叠：仅对可折叠段，summary 无文字（CSS ::before 提供"展开本段/收起"）
     const foldable = seg.foldable && (seg.priority==='可略读' || seg.priority==='简单读');
     const collapse = foldable && (state.mode==='聚焦阅读' && seg.priority==='可略读' || state.mode==='快速浏览' && seg.priority!=='重点读');
     if(collapse){
       const det=document.createElement('details'); det.className='fold-wrap';
-      const sum=document.createElement('summary'); sum.textContent=seg.skip_note||'折叠内容，可展开查看';
+      const sum=document.createElement('summary'); sum.textContent='';
       det.appendChild(sum); det.appendChild(body);
-      det.open=false;
+      det.open=foldState[seg.seg_no]||state.allExpanded||false;
+      det.addEventListener('toggle',()=>{foldState[seg.seg_no]=det.open;});
       d.appendChild(det);
     } else {
       d.appendChild(body);
     }
-
-    if(seg.skip_note){ const sn=document.createElement('p'); sn.className='skipnote'; sn.textContent=seg.skip_note; d.appendChild(sn); }
 
     // 单段原文/辅助切换
     const foot=document.createElement('div'); foot.className='segfoot';
@@ -152,9 +196,11 @@ function render(){
     root.appendChild(d);
     refreshSegView(d,seg);
   });
-  // 恢复焦点位置
+  // 恢复焦点与弱化
   if(state.cur>=0 && state.cur<sents.length){ sents[state.cur].el.classList.add('active'); }
+  applyDimming();
   updatePos();
+  window.scrollTo(0,scrollTop);
 }
 
 function segViewOf(n){ return segView[n]||state.view; }
@@ -166,12 +212,23 @@ function refreshSegView(d,seg){
   if(o) o.style.display = v==='original'?'block':'none';
 }
 
+function applyDimming(){
+  document.querySelectorAll('.seg').forEach(s=>s.classList.remove('dimmed'));
+  if(state.hl && state.cur>=0 && sents[state.cur]){
+    const curSeg=sents[state.cur].segNo;
+    document.querySelectorAll('.seg').forEach(s=>{ if(+s.dataset.seg!==curSeg) s.classList.add('dimmed'); });
+  }
+}
+
 function focusAt(i){
   if(!state.hl || i<0||i>=sents.length) return;
+  // 跳过折叠隐藏的句子
+  const el=sents[i].el;
+  if(!el.offsetParent) return;
   if(state.cur>=0 && sents[state.cur]) sents[state.cur].el.classList.remove('active');
   state.cur=i; sents[i].el.classList.add('active');
   sents[i].el.scrollIntoView({block:'center',behavior:'smooth'});
-  updatePos(); saveLS();
+  applyDimming(); updatePos(); saveLS();
 }
 function updatePos(){
   const pbar=document.getElementById('pbar');
@@ -181,20 +238,40 @@ function updatePos(){
 }
 
 // 事件
-document.getElementById('next').addEventListener('click',()=>focusAt(Math.min(state.cur+1,sents.length-1)));
-document.getElementById('prev').addEventListener('click',()=>focusAt(Math.max(state.cur-1,0)));
+document.getElementById('next').addEventListener('click',()=>{
+  for(let i=state.cur+1;i<sents.length;i++){ if(sents[i].el.offsetParent){ focusAt(i); return; } }
+});
+document.getElementById('prev').addEventListener('click',()=>{
+  for(let i=state.cur-1;i>=0;i--){ if(sents[i].el.offsetParent){ focusAt(i); return; } }
+});
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='SELECT') return;
-  if(e.key==='ArrowRight') focusAt(Math.min(state.cur+1,sents.length-1));
-  if(e.key==='ArrowLeft') focusAt(Math.max(state.cur-1,0));
+  if(e.key==='ArrowRight') document.getElementById('next').click();
+  if(e.key==='ArrowLeft') document.getElementById('prev').click();
 });
 document.getElementById('fs').addEventListener('change',e=>{state.fs=e.target.value;applySettings();saveLS();});
 document.getElementById('lh').addEventListener('change',e=>{state.lh=e.target.value;applySettings();saveLS();});
 document.getElementById('th').addEventListener('change',e=>{state.th=e.target.value;applySettings();saveLS();});
-document.getElementById('hlBtn').addEventListener('click',()=>{state.hl=!state.hl;applySettings();document.querySelectorAll('.sent').forEach(s=>s.classList.toggle('hl-on',state.hl));if(!state.hl){document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));state.cur=-1;updatePos();}saveLS();});
-document.getElementById('origAll').addEventListener('click',()=>{state.view=state.view==='assisted'?'original':'assisted';segView={};applySettings();document.querySelectorAll('.seg').forEach(d=>{const n=+d.dataset.seg;const seg=DATA.segments.find(s=>s.seg_no===n);refreshSegView(d,seg);d.querySelector('.segfoot button').textContent=state.view==='original'?'返回辅助版':'查看原文';});saveLS();});
-document.getElementById('modeBtn').addEventListener('click',()=>{const ms=['完整阅读','聚焦阅读','快速浏览'];let i=ms.indexOf(state.mode);i=(i+1)%ms.length;state.mode=ms[i];applySettings();render();saveLS();});
-document.getElementById('expandAll').addEventListener('click',()=>{document.querySelectorAll('.fold-wrap').forEach(d=>d.open=true);});
+document.getElementById('hlBtn').addEventListener('click',()=>{
+  state.hl=!state.hl;applySettings();
+  document.querySelectorAll('.sent').forEach(s=>s.classList.toggle('hl-on',state.hl));
+  if(!state.hl){document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));state.cur=-1;applyDimming();updatePos();}
+  saveLS();
+});
+document.getElementById('origAll').addEventListener('click',()=>{
+  state.view=state.view==='assisted'?'original':'assisted';segView={};applySettings();
+  document.querySelectorAll('.seg').forEach(d=>{const n=+d.dataset.seg;const seg=DATA.segments.find(s=>s.seg_no===n);refreshSegView(d,seg);d.querySelector('.segfoot button').textContent=state.view==='original'?'返回辅助版':'查看原文';});
+  saveLS();
+});
+document.getElementById('modeBtn').addEventListener('click',()=>{
+  const ms=['完整阅读','聚焦阅读','快速浏览'];let i=ms.indexOf(state.mode);i=(i+1)%ms.length;state.mode=ms[i];
+  applySettings();render();saveLS();
+});
+document.getElementById('expandAll').addEventListener('click',()=>{
+  state.allExpanded=!state.allExpanded;
+  document.querySelectorAll('.fold-wrap,.unit-fold').forEach(d=>d.open=state.allExpanded);
+  applySettings();saveLS();
+});
 
 applySettings(); render();
 </script>

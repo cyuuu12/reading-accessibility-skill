@@ -159,7 +159,61 @@ test("保真：报告不确定性", len(r_ok['uncertainty'])>0, "有", str(len(r
 r_tt=fidelity.check(TEST_TEXT, TEST_TEXT)
 test("保真：翻译文本自检通过", r_tt['all_fidelity'], True, str(r_tt['all_fidelity']))
 
-# ========== 10. 兼容性 / 回归 ==========
+# ========== 10. V2.2 统一处理层 + 段内语义单元路由 ==========
+ANALYZE_PATH = os.path.join(SCRIPTS, 'analyze.py')
+test("analyze.py 存在", os.path.exists(ANALYZE_PATH), "有", "ok")
+if os.path.exists(ANALYZE_PATH):
+    analyzer = load('analyzer', ANALYZE_PATH)
+    r = analyzer.route_text(TEST_TEXT)
+    test("统一处理·段数6", len(r['segments'])==6, "6", str(len(r['segments'])))
+    test("统一处理·含units", all('units' in s for s in r['segments']), "有units", "ok")
+    # 段内语义单元：至少一段有多个 unit
+    multi_unit = any(len(s['units'])>1 for s in r['segments'])
+    test("统一处理·段内多单元", multi_unit, "有", str(multi_unit))
+    # 60% 上限自检
+    import re as _re
+    total = sum(len(_re.sub(r'\s','',s['original'])) for s in r['segments'])
+    focus = sum(len(_re.sub(r'\s','',s['original'])) for s in r['segments'] if s['priority']=='重点读')
+    ratio = focus/total if total else 0
+    test("统一处理·重点读<60%上限", ratio<=0.6, f"≤60%({ratio:.0%})", f"{ratio:.0%}")
+    test("统一处理·非全重点读", not all(s['priority']=='重点读' for s in r['segments']), "有差异", "ok")
+    test("统一处理·含modules", 'modules' in r and len(r['modules'])>0, "有", str(len(r.get('modules',[]))))
+
+# build_reader --from-text 不全标重点读
+data2 = builder.build_data_from_text(TEST_TEXT)
+all_focus = all(s['priority']=='重点读' for s in data2['segments'])
+test("--from-text不全标重点读", not all_focus, "非全重点读", str(all_focus))
+
+# ========== 11. V2.2 HTML 交互修复 ==========
+test("HTML 橙红色优先级 --pri-focus", '--pri-focus' in html, "有", "ok")
+test("HTML 橙红色值(非蓝)", '#d4502a' in html or '#ff6b3d' in html, "橙红", "ok")
+test("HTML 高亮弱化 .dimmed", 'dimmed' in html and 'opacity:.85' in html or 'opacity: .85' in html, "有弱化", "ok")
+test("HTML 段内局部折叠 .unit-fold", 'unit-fold' in html, "有", "ok")
+test("HTML 折叠入口无skip_note文字", 'skipnote' not in html, "无skipnote类", "ok")
+test("HTML 折叠summary空文字", "sum.textContent=''" in html, "空summary", "ok")
+test("HTML expandAll切换状态", "恢复折叠" in html, "有切换", "ok")
+test("HTML expandAll禁用判断", "eb.disabled" in html, "有禁用", "ok")
+test("HTML 模式切换保留滚动", "scrollTop" in html, "有保留", "ok")
+test("HTML 上一句跳过折叠", "offsetParent" in html, "有跳过", "ok")
+test("HTML prefers-reduced-motion", "prefers-reduced-motion" in html, "有", "ok")
+
+# ========== 12. V2.2 Markdown 简化 ==========
+MD_TPL = read(os.path.join(SKILL,'assets','focus_version_template.md'))
+test("Markdown模板·保留原文主体", "保留原文" in MD_TPL, "有", "ok")
+test("Markdown模板·不逐段摘要", "逐段总结" in MD_TPL and "不" in MD_TPL, "禁止", "ok")
+test("Markdown模板·不承载三级标签", "三级策略" in MD_TPL and "不" in MD_TPL, "禁止", "ok")
+DEMO_MD = read(os.path.join(HERE,'demo_chat.md'))
+test("Markdown演示·无路线标签表", "重点读｜" not in DEMO_MD, "无标签", "ok")
+test("Markdown演示·无逐段标题", DEMO_MD.count("### 段")==0, "无段标题", str(DEMO_MD.count("### 段")))
+
+# ========== 13. V2.2 路由文档 ==========
+test("路由·段内语义单元", "段内语义单元" in ROUTING, "有", "ok")
+test("路由·60%上限自检", "60%" in ROUTING, "有", "ok")
+test("路由·无≤25%矛盾", "≤25%" not in ROUTING, "无矛盾", "ok")
+test("路由·橙红色", "橙红" in ROUTING, "有", "ok")
+test("路由·统一处理层", "统一处理层" in ROUTING or "analyze.py" in ROUTING, "有", "ok")
+
+# ========== 14. 兼容性 / 回归 ==========
 test("Markdown 模板存在", os.path.exists(os.path.join(SKILL,'assets','focus_version_template.md')), "有", "ok")
 test("地图模板存在", os.path.exists(os.path.join(SKILL,'assets','attention_map_template.md')), "有", "ok")
 SAMPLE=os.path.join(SCRIPTS,'sample_original.txt')
@@ -173,7 +227,7 @@ else:
 
 # ========== 输出 ==========
 print("="*60)
-print("Reading Accessibility Skill V2.1 测试报告")
+print("Reading Accessibility Skill V2.2 测试报告")
 print("="*60)
 for name,status,exp,act in RESULTS:
     print(f"[{status}] {name}")

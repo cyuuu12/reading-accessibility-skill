@@ -60,20 +60,27 @@ def split_sentences(text):
 
 
 def build_data_from_text(text, title="阅读辅助"):
-    """从纯文本快速构建数据：按空行分段，全标重点读（保守默认）。"""
-    segs_raw = [s.strip() for s in re.split(r'\n\s*\n', text.strip()) if s.strip()]
-    segments = []
-    for i, s in enumerate(segs_raw, 1):
-        segments.append({
-            "seg_no": i,
-            "priority": "重点读",
-            "reason": "自动构建，默认重点读，请按 routing.md 重新标注。",
-            "skip_note": None,
-            "original": s,
-            "sentences": split_sentences(s),
-            "foldable": False,
-        })
-    return {"title": title, "mode": "完整阅读", "high_risk": False, "segments": segments}
+    """从纯文本构建数据：调用统一处理层 analyze.route_text 做语义路由（V2.2）。
+    不再默认全标重点读；保守预览，不替代完整语义路由。"""
+    try:
+        from analyze import route_text
+        result = route_text(text)
+        result["title"] = title
+        # 去掉内部 _meta，不注入 HTML
+        result.pop("_meta", None)
+        return result
+    except Exception:
+        # 回退：按空行分段，全标简单读（保守预览）
+        segs_raw = [s.strip() for s in re.split(r'\n\s*\n', text.strip()) if s.strip()]
+        segments = []
+        for i, s in enumerate(segs_raw, 1):
+            segments.append({
+                "seg_no": i, "priority": "简单读",
+                "reason": "回退预览，请按 routing.md 重新标注。",
+                "skip_note": None, "original": s,
+                "sentences": split_sentences(s), "foldable": True,
+            })
+        return {"title": title, "mode": "聚焦阅读", "high_risk": False, "segments": segments}
 
 
 def inject(template_html, data):
