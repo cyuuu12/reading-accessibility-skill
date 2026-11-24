@@ -59,28 +59,31 @@ def split_sentences(text):
     return [s.strip() for s in out if s.strip()] or [text.strip()]
 
 
-def build_data_from_text(text, title="阅读辅助"):
-    """从纯文本构建数据：调用统一处理层 analyze.route_text 做语义路由（V2.2）。
-    不再默认全标重点读；保守预览，不替代完整语义路由。"""
+def build_data_from_text(text, title="阅读辅助", analysis=None):
+    """从纯文本构建数据：调用统一处理层 analyze.route_text（V2.3）。
+    有 Agent analysis 时用语义路由；无则保守模式（全文呈现，不贴标签，不折叠）。"""
     try:
-        from analyze import route_text
-        result = route_text(text)
+        import importlib.util as _ilu
+        _ap = os.path.join(HERE, 'analyze.py')
+        _spec = _ilu.spec_from_file_location('analyze', _ap)
+        _am = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_am)
+        result = _am.route_text(text, analysis=analysis)
         result["title"] = title
-        # 去掉内部 _meta，不注入 HTML
         result.pop("_meta", None)
         return result
     except Exception:
-        # 回退：按空行分段，全标简单读（保守预览）
         segs_raw = [s.strip() for s in re.split(r'\n\s*\n', text.strip()) if s.strip()]
         segments = []
         for i, s in enumerate(segs_raw, 1):
             segments.append({
-                "seg_no": i, "priority": "简单读",
-                "reason": "回退预览，请按 routing.md 重新标注。",
-                "skip_note": None, "original": s,
-                "sentences": split_sentences(s), "foldable": True,
+                "seg_no": i, "priority": None, "reason": None,
+                "original": s, "sentences": split_sentences(s),
+                "blocks": [{"text": s, "role": None, "priority": None,
+                            "sentences": split_sentences(s), "preview": None}],
+                "foldable": False,
             })
-        return {"title": title, "mode": "聚焦阅读", "high_risk": False, "segments": segments}
+        return {"title": title, "mode": "聚焦阅读", "high_risk": False,
+                "segments": segments, "conservative": True}
 
 
 def inject(template_html, data):
@@ -101,13 +104,18 @@ def main():
 
     if args[0] == '--from-text':
         if len(args) < 3:
-            print("用法: build_reader.py --from-text input.txt output.html [template]")
+            print("用法: build_reader.py --from-text input.txt output.html [analysis.json] [template]")
             sys.exit(1)
         with open(args[1], 'r', encoding='utf-8') as f:
             text = f.read()
-        data = build_data_from_text(text)
+        analysis = None
+        if len(args) > 3 and not args[3].endswith('.html'):
+            with open(args[3], 'r', encoding='utf-8') as f:
+                analysis = json.load(f)
+        data = build_data_from_text(text, analysis=analysis)
         out_path = args[2]
-        tpl_path = args[3] if len(args) > 3 else DEFAULT_TEMPLATE
+        tpl_idx = 4 if analysis else 3
+        tpl_path = args[tpl_idx] if len(args) > tpl_idx else DEFAULT_TEMPLATE
     else:
         if len(args) < 2:
             print("用法: build_reader.py data.json output.html [template]")
