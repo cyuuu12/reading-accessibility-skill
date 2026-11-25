@@ -7,23 +7,20 @@
 <style>
   :root{
     --bg:#fff; --fg:#1a1a1a; --fg-dim:#5f5f5f; --muted:#626262; --accent:#1f6feb;
-    --focus-border:#CC6437; --focus-fill-0:#FFF2E9; --focus-fill-1:#FFF6F0;
-    --focus-fill-2:#FFFAF7; --focus-fill-3:#FFFDFC; --em-fg:#A8431F;
+    --focus-border:#CC6437; --focus-fill:#FFF2E9; --em-fg:#A8431F;
     --skim-border:#9CABB8; --skip-bg:#f3f4f5; --skip-border:#b7b9bc;
     --hl-bg:#fff3cd; --hl-border:#a87500; --control-bg:#f6f8fa;
     --reader-font-size:18px; --reader-line-height:1.7;
   }
   [data-theme="dark"]{
     --bg:#1e1e1e; --fg:#e6e6e6; --fg-dim:#a3a3a3; --muted:#aaa; --accent:#82bfff;
-    --focus-border:#E48A5F; --focus-fill-0:#3A2A1E; --focus-fill-1:#32261E;
-    --focus-fill-2:#2A221D; --focus-fill-3:#231F1C; --em-fg:#FFAB84;
+    --focus-border:#E48A5F; --focus-fill:#3A2A1E; --em-fg:#FFAB84;
     --skim-border:#718895; --skip-bg:#292929; --skip-border:#666;
     --hl-bg:#5A4718; --hl-border:#D8A928; --control-bg:#2a2a2a;
   }
   [data-theme="sepia"]{
     --bg:#f4ecd8; --fg:#2e2a20; --fg-dim:#665d4e; --muted:#625846; --accent:#75500b;
-    --focus-border:#9D5B35; --focus-fill-0:#EFE0C8; --focus-fill-1:#F0E4D0;
-    --focus-fill-2:#F2E8D6; --focus-fill-3:#F3EBDC; --em-fg:#75401F;
+    --focus-border:#9D5B35; --focus-fill:#EFE0C8; --em-fg:#75401F;
     --skim-border:#8F9B9B; --skip-bg:#E9DFC9; --skip-border:#9B907B;
     --hl-bg:#E8D9A8; --hl-border:#856300; --control-bg:#EDE0C8;
   }
@@ -43,18 +40,16 @@
   .progress>div{height:100%;width:0;background:var(--accent);transition:width .15s}
   .help{font-size:.78em;color:var(--muted);margin:6px 0 0}
   main{max-width:760px;margin:0 auto;padding:18px 14px 90px;font-size:var(--reader-font-size);line-height:var(--reader-line-height)}
-  /* 连续视觉区域：边框属于区域，填充按块衰减，不产生逐块卡片。 */
-  .region{margin:0 0 18px;border-left:3px solid transparent}
+  /* 连续视觉区域：统一强度填充，区域起点留 10px；边框自然收口，无卡片外框或阴影。 */
+  .region{margin:10px 0 18px;border-left:3px solid transparent;border-radius:3px}
   .region[data-pri="精读"]{border-left-color:var(--focus-border)}
   .region[data-pri="速览"]{border-left:2px solid var(--skim-border)}
   .region[data-pri="跳读"]{border-left-color:var(--skip-border)}
   .block{margin:0;padding:10px 12px;color:var(--fg);font-size:var(--reader-font-size);line-height:var(--reader-line-height);overflow-wrap:anywhere;transition:color .15s,background-color .15s}
   .block.para-start{margin-top:10px}
-  .region>.block:first-child{margin-top:0}
-  .region[data-pri="精读"] .block.depth-0{background:var(--focus-fill-0)}
-  .region[data-pri="精读"] .block.depth-1{background:var(--focus-fill-1)}
-  .region[data-pri="精读"] .block.depth-2{background:var(--focus-fill-2)}
-  .region[data-pri="精读"] .block.depth-3{background:var(--focus-fill-3)}
+  .region>.block:first-child{margin-top:0;border-top-left-radius:3px}
+  .region>.block:last-child{border-bottom-left-radius:3px}
+  .region[data-pri="精读"] .block{background:var(--focus-fill)}
   /* 速览是清晰基准态：不删减、不染色、不降低透明度，仅以行长和间距辅助排版。 */
   .region[data-pri="速览"] .block{max-width:36em;padding-top:15px;padding-bottom:15px;font-weight:400;background:transparent}
   .region[data-pri="跳读"] .block{background:var(--skip-bg)}
@@ -76,7 +71,8 @@
   .skip-preview{color:var(--muted);flex:1}
   .skip-action{flex:none;color:var(--muted);font-size:.78em;white-space:nowrap}
   .skip-fold .block{background:transparent}
-  .origtext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--reader-font-size);line-height:var(--reader-line-height);max-width:none}
+  .origtext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--reader-font-size);line-height:var(--reader-line-height);max-width:none;font-weight:400;background:transparent}
+  #original-full,#original-full .original-block{margin:0;padding:0;border:0;border-radius:0;box-shadow:none;color:var(--fg);background:transparent;font:inherit;font-weight:400;text-decoration:none}
   footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.82em;color:var(--muted);z-index:10}
   footer button{font-size:.85em;min-height:44px;min-width:44px;padding:6px 14px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer}
   @media(max-width:600px){main{padding:14px 10px 90px}.toolbar{gap:4px}.toolbar label{font-size:.75em}.region[data-pri="速览"] .block{max-width:100%}.skip-fold>summary{flex-wrap:wrap;gap:2px 8px}}
@@ -155,9 +151,9 @@ function appendEmphasized(parent,text,offset,emphasis){
     else parent.appendChild(document.createTextNode(text.slice(a,b)));
   }
 }
-function makeBlock(entry,depth){
+function makeBlock(entry){
   const el=document.createElement('div');const pri=entry.block.priority||'速览';
-  el.className='block depth-'+depth+(entry.paraStart?' para-start':'');el.dataset.pri=pri;el.dataset.blockId=entry.id;el.dataset.seg=entry.segNo;
+  el.className='block'+(entry.paraStart?' para-start':'');el.dataset.pri=pri;el.dataset.blockId=entry.id;el.dataset.seg=entry.segNo;
   const text=entry.block.text||'',sentences=entry.block.sentences||[text],em=entry.block.emphasis||[];let cursor=0;
   sentences.forEach((sentence,si)=>{
     let at=text.indexOf(sentence,cursor);if(at<0)at=text.indexOf(sentence);if(at<0)return;
@@ -171,12 +167,11 @@ function makeBlock(entry,depth){
   if(cursor<text.length)appendEmphasized(el,text.slice(cursor),cursor,em);
   return el;
 }
-function depthFor(i){return i===0?0:i<=2?1:i===3?2:3}
 function makeSkipGroup(group){
   const det=document.createElement('details');det.className='skip-fold';det.dataset.skipGroup=group[0].id;
   const sum=document.createElement('summary');const pv=document.createElement('span');pv.className='skip-preview';pv.textContent=group[0].block.preview||'以下为'+(group[0].block.role||'补充材料');
   const action=document.createElement('span');action.className='skip-action';sum.appendChild(pv);sum.appendChild(action);det.appendChild(sum);
-  group.forEach(e=>det.appendChild(makeBlock(e,0)));
+  group.forEach(e=>det.appendChild(makeBlock(e)));
   det.open=state.allExpanded||foldState[group[0].id]===true;
   const sync=()=>{action.textContent=det.open?'收起原文':'展开原文'};
   sync();det.addEventListener('toggle',()=>{
@@ -196,12 +191,13 @@ function renderOriginal(){
   if(cursor<originalText.length)container.appendChild(document.createTextNode(originalText.slice(cursor)));
   root.appendChild(container);
 }
+function structuralBoundary(entry){return ['标题','列表','引文','原文译文对照','对照','表格','分隔线'].includes(entry.block.structure||entry.block.role)}
 function renderAssisted(){
   let i=0;
   while(i<entries.length){
     const pri=entries[i].block.priority||'速览';const folded=pri==='跳读'&&state.mode!=='完整阅读';let j=i+1;
     if(folded){while(j<entries.length&&(entries[j].block.priority||'速览')==='跳读'&&entries[j].block.role===entries[i].block.role)j++;root.appendChild(makeSkipGroup(entries.slice(i,j)))}
-    else{while(j<entries.length&&(entries[j].block.priority||'速览')===pri)j++;const region=document.createElement('section');region.className='region';region.dataset.pri=pri;entries.slice(i,j).forEach((e,k)=>region.appendChild(makeBlock(e,pri==='精读'?depthFor(k):0)));root.appendChild(region)}
+    else{if(!structuralBoundary(entries[i]))while(j<entries.length&&(entries[j].block.priority||'速览')===pri&&!structuralBoundary(entries[j]))j++;const region=document.createElement('section');region.className='region';region.dataset.pri=pri;entries.slice(i,j).forEach(e=>region.appendChild(makeBlock(e)));root.appendChild(region)}
     i=j;
   }
 }

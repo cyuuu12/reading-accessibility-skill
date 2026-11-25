@@ -1,7 +1,7 @@
 {
   "browser": "Chrome headless (CDP)",
-  "timestamp": "2026-11-24T14:32:44.849Z",
-  "passed": 34,
+  "timestamp": "2026-11-25T08:02:57.125Z",
+  "passed": 40,
   "failed": 0,
   "results": [
     {
@@ -115,6 +115,38 @@
       "detail": "《红楼梦》第117回原文引文"
     },
     {
+      "name": "跳读预览只描述区域范围",
+      "status": "通过",
+      "detail": [
+        {
+          "preview": "《红楼梦》第117回原文引文",
+          "text": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）"
+        },
+        {
+          "preview": "霍克思英译原文",
+          "text": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．"
+        }
+      ]
+    },
+    {
+      "name": "区域起点有10px间隙且无卡片阴影",
+      "status": "通过",
+      "detail": {
+        "gap": "10px",
+        "shadow": "none",
+        "border": "3px"
+      }
+    },
+    {
+      "name": "辅助正文逐字一致且段落数量不变",
+      "status": "通过",
+      "detail": {
+        "texts": true,
+        "paragraphs": 6,
+        "segments": 6
+      }
+    },
+    {
       "name": "无逐段原文按钮，仅全局切换",
       "status": "通过",
       "detail": ""
@@ -167,13 +199,18 @@
       "detail": ""
     },
     {
+      "name": "点击跳读预览只展开不进入聚焦",
+      "status": "通过",
+      "detail": ""
+    },
+    {
       "name": "深色高亮与页面背景有可测亮度差",
       "status": "通过",
       "detail": {
         "bg": "rgb(30, 30, 30)",
         "fg": "rgb(230, 230, 230)",
         "hl": "rgb(90, 71, 24)",
-        "dim": "rgb(153, 153, 153)"
+        "dim": "rgb(163, 163, 163)"
       }
     },
     {
@@ -184,7 +221,7 @@
     {
       "name": "深色减淡文字对比度≥4.5:1",
       "status": "通过",
-      "detail": 5.851524838036664
+      "detail": 6.608964035542627
     },
     {
       "name": "关闭高亮恢复填充并清除减淡",
@@ -201,7 +238,7 @@
       "status": "通过",
       "detail": {
         "id": "s1b0",
-        "top": 113
+        "top": 123
       }
     },
     {
@@ -212,18 +249,20 @@
         "strong": 0,
         "folds": 0,
         "assisted": 0,
-        "buttons": 0
+        "buttons": 0,
+        "noResidue": true
       }
     },
     {
-      "name": "原文模式无强调/折叠/辅助文本副本",
+      "name": "原文模式无任何辅助标记或视觉残留",
       "status": "通过",
       "detail": {
         "same": true,
         "strong": 0,
         "folds": 0,
         "assisted": 0,
-        "buttons": 0
+        "buttons": 0,
+        "noResidue": true
       }
     },
     {
@@ -236,7 +275,7 @@
       "status": "通过",
       "detail": {
         "id": "s1b0",
-        "top": 113
+        "top": 123
       }
     },
     {
@@ -255,16 +294,24 @@
       "detail": ""
     },
     {
-      "name": "长精读区域背景逐级衰减",
+      "name": "长精读区域背景统一且不衰减",
       "status": "通过",
       "detail": {
         "bg": [
-          "rgb(58, 42, 30)",
-          "rgb(50, 38, 30)",
-          "rgb(50, 38, 30)",
-          "rgb(42, 34, 29)",
-          "rgb(35, 31, 28)"
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)"
         ]
+      }
+    },
+    {
+      "name": "列表结构边界强制断区",
+      "status": "通过",
+      "detail": {
+        "focusRegions": 2
       }
     },
     {
@@ -272,13 +319,15 @@
       "status": "通过",
       "detail": {
         "bg": [
-          "rgb(58, 42, 30)",
-          "rgb(50, 38, 30)",
-          "rgb(50, 38, 30)",
-          "rgb(42, 34, 29)",
-          "rgb(35, 31, 28)"
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)",
+          "rgb(255, 242, 233)"
         ],
         "borders": [
+          "0px",
           "0px",
           "0px",
           "0px",
@@ -290,9 +339,10 @@
           "3px",
           "3px",
           "3px",
+          "3px",
           "3px"
         ],
-        "regions": 2,
+        "focusRegions": 2,
         "folds": 2
       }
     },
@@ -304,13 +354,34 @@
       }
     },
     {
+      "name": "三主题精读均有可辨填充而非只剩边框",
+      "status": "通过",
+      "detail": {
+        "light": {
+          "fill": "rgb(255, 242, 233)",
+          "page": "rgb(255, 255, 255)",
+          "border": "3px"
+        },
+        "dark": {
+          "fill": "rgb(58, 42, 30)",
+          "page": "rgb(30, 30, 30)",
+          "border": "3px"
+        },
+        "sepia": {
+          "fill": "rgb(239, 224, 200)",
+          "page": "rgb(244, 236, 216)",
+          "border": "3px"
+        }
+      }
+    },
+    {
       "name": "护眼主题字号统一且对比度≥4.5:1",
       "status": "通过",
       "detail": {
         "size": "20px",
-        "fg": "rgb(73, 70, 61)",
+        "fg": "rgb(46, 42, 32)",
         "bg": "rgb(244, 236, 216)",
-        "contrast": 8.01007862167861
+        "contrast": 12.1483716308543
       }
     },
     {
