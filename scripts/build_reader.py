@@ -1,26 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build_reader.py — HTML 交互阅读器生成器（零依赖）
-读取结构化阅读数据 JSON + HTML 模板，注入安全转义后的数据，生成可离线打开的独立 HTML。
+build_reader.py — HTML 交互阅读器生成器（V2.3.2，零依赖）
+读取语义分析数据 JSON + HTML 模板，注入安全转义后的数据，生成可离线打开的独立 HTML。
 
-数据 JSON schema:
-{
-  "title": "可选标题",
-  "mode": "完整阅读|聚焦阅读|快速浏览",
-  "high_risk": false,
-  "segments": [
-    {
-      "seg_no": 1,
-      "priority": "重点读|简单读|可略读",
-      "reason": "一句通俗原因",
-      "skip_note": "略过会…（可略读段才需要）或 null",
-      "original": "原文段落",
-      "sentences": ["句1","句2"],   // 辅助版逐句，用于逐句高亮
-      "foldable": true
-    }
-  ]
-}
+核心数据：title、mode、segments[].blocks、original_text、conservative。
+每个 block 包含 text、role、priority（精读/速览/跳读）、sentences、preview，
+以及可选 emphasis（相对本块的 start/end/text/score 区间）。
+原文模式使用 original_text 逐字恢复；辅助版只生成一份文本 DOM。
 
 用法:
     python build_reader.py data.json output.html
@@ -83,7 +70,7 @@ def build_data_from_text(text, title="阅读辅助", analysis=None):
                 "foldable": False,
             })
         return {"title": title, "mode": "聚焦阅读", "high_risk": False,
-                "segments": segments, "conservative": True}
+                "segments": segments, "original_text": text, "conservative": True}
 
 
 def inject(template_html, data):

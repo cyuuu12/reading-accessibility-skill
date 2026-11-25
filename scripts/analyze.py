@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-analyze.py — 统一处理层（V2.3）
+analyze.py — 统一处理层（V2.3.2）
 
 三层分工：
 - Agent（宿主模型）：根据全文上下文判断语义功能与阅读优先级，按 schema 输出结构化分析。
@@ -70,6 +70,7 @@ def _conservative_route(text, paras, high_risk=False):
         "high_risk": high_risk,
         "modules": [],
         "segments": segments,
+        "original_text": text,
         "conservative": True,
         "_meta": {"goal": "general", "diagnostic": None, "problem_paras": []},
     }
@@ -114,9 +115,7 @@ def _validate_blocks(blocks, original):
 
 # ── 语义块构建（合并相邻同类句） ──────────────────
 def _build_blocks_from_analysis(paragraph, analysis_blocks):
-    """从 Agent 分析结果构建语义块。
-    Agent 已提供块划分；Python 校验并补充句子级信息。
-    相邻同类块可合并（Agent 已做合并，此处只校验）。"""
+    """从 Agent 分析结果构建语义块；emphasis 随后统一校验。"""
     blocks = []
     for b in analysis_blocks:
         text = b.get("text", "").strip()
@@ -127,8 +126,94 @@ def _build_blocks_from_analysis(paragraph, analysis_blocks):
             "priority": b.get("priority", "速览"),
             "sentences": sents,
             "preview": b.get("preview"),
+            "emphasis": b.get("emphasis") or [],
         })
     return blocks
+
+
+def _sanitize_emphasis(blocks, full_text):
+    """校验并裁剪局部强调，不影响正文或阅读策略。
+
+    区间为相对 block.text 的 Python 字符区间 [start, end)。非法、越界、
+    原文不匹配、重叠、单处超 15 字者丢弃；每块按 score 至多保留 3 处，
+    全文再按 score 截断到非空白正文字符的 5%。返回诊断，不阻断输出。
+    """
+    diagnostics = {"accepted": 0, "characters": 0, "limit": 0,
+                   "dropped": [], "ratio": 0.0}
+    total_chars = len(_nonws(full_text))
+    budget = int(total_chars * 0.05)
+    diagnostics["limit"] = budget
+    candidates = []
+    for bi, block in enumerate(blocks):
+        text = block.get("text", "")
+        raw = block.get("emphasis") or []
+        if not isinstance(raw, list):
+            diagnostics["dropped"].append({"block": bi, "reason": "emphasis_not_list"})
+            raw = []
+        for ei, item in enumerate(raw):
+            base = {"block": bi, "item": ei}
+            if not isinstance(item, dict):
+                diagnostics["dropped"].append(dict(base, reason="invalid_item"))
+                continue
+            start, end = item.get("start"), item.get("end")
+            if (not isinstance(start, int) or isinstance(start, bool)
+                    or not isinstance(end, int) or isinstance(end, bool)
+                    or start < 0 or end <= start or end > len(text)):
+                diagnostics["dropped"].append(dict(base, reason="invalid_span"))
+                continue
+            fragment = text[start:end]
+            if item.get("text") is not None and item["text"] != fragment:
+                diagnostics["dropped"].append(dict(base, reason="text_mismatch"))
+                continue
+            if len(fragment) > 15:
+                diagnostics["dropped"].append(dict(base, reason="over_15_chars"))
+                continue
+            try:
+                score = float(item.get("score", 0))
+            except (TypeError, ValueError):
+                score = 0.0
+            candidates.append({"start": start, "end": end, "text": fragment,
+                               "score": score, "block": bi, "item": ei,
+                               "length": len(_nonws(fragment))})
+
+    kept = []
+    for bi, block in enumerate(blocks):
+        mine = sorted((c for c in candidates if c["block"] == bi),
+                      key=lambda c: (-c["score"], c["start"], c["item"]))
+        block_kept = []
+        for c in mine:
+            reason = None
+            if len(block_kept) >= 3:
+                reason = "over_3_per_block"
+            elif any(c["start"] < k["end"] and k["start"] < c["end"]
+                     for k in block_kept):
+                reason = "overlap"
+            if reason:
+                diagnostics["dropped"].append({"block": bi, "item": c["item"],
+                                               "reason": reason})
+            else:
+                block_kept.append(c)
+                kept.append(c)
+
+    selected = []
+    used = 0
+    for c in sorted(kept, key=lambda c: (-c["score"], c["block"], c["start"])):
+        if used + c["length"] <= budget:
+            selected.append(c)
+            used += c["length"]
+        else:
+            diagnostics["dropped"].append({"block": c["block"], "item": c["item"],
+                                           "reason": "over_5_percent"})
+    for block in blocks:
+        block["emphasis"] = []
+    for c in sorted(selected, key=lambda c: (c["block"], c["start"], c["end"])):
+        blocks[c["block"]]["emphasis"].append({
+            "start": c["start"], "end": c["end"], "text": c["text"],
+            "score": c["score"]})
+    diagnostics["accepted"] = len(selected)
+    diagnostics["characters"] = used
+    diagnostics["ratio"] = round(used / total_chars, 5) if total_chars else 0.0
+    return diagnostics
 
 
 def _merge_adjacent_skip_blocks(blocks):
@@ -277,7 +362,10 @@ def route_text(text, goal="general", high_risk=False, analysis=None):
             "foldable": has_skip,
         })
 
+    all_blocks = [b for seg in segments for b in seg["blocks"]]
+    emphasis_diagnostic = _sanitize_emphasis(all_blocks, text)
     diagnostic = _diagnostic(segments)
+    diagnostic["emphasis"] = emphasis_diagnostic
     modules = _build_modules(segments)
     mode = "完整阅读" if high_risk else (goal if goal in ("完整阅读", "聚焦阅读", "快速浏览") else "聚焦阅读")
 
@@ -287,6 +375,7 @@ def route_text(text, goal="general", high_risk=False, analysis=None):
         "high_risk": high_risk,
         "modules": modules,
         "segments": segments,
+        "original_text": text,
         "conservative": False,
         "_meta": {"goal": goal, "diagnostic": diagnostic, "problem_paras": problem_paras},
     }

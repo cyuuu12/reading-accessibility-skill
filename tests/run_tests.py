@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-run_tests.py — Reading Accessibility Skill V2.3 测试（零依赖）
+run_tests.py — Reading Accessibility Skill V2.3.2 测试（零依赖）
 覆盖：触发、frontmatter、Agent语义分析schema、语义块切分、保守模式、
       诊断不阻断、HTML视觉分层、聚焦减淡(颜色变量)、速览可见、跳读预览、
       原文完整性、保真、中英混排、三模式差异、Merriam-Webster误判防护、回归。
@@ -200,7 +200,7 @@ test("HTML 安全转义</script>", '<\\/script>' in builder.inject(HTML_TPL, {"s
 # V2.3 视觉分层
 test("HTML 减淡用--fg-dim颜色变量", '--fg-dim' in html, "有", "ok")
 test("HTML 减淡不用opacity", 'opacity:.85' not in html and 'opacity: .85' not in html, "无opacity", "ok")
-test("HTML 精读橙红边--pri-focus", '--pri-focus' in html, "有", "ok")
+test("HTML 精读橙红边--focus-border", '--focus-border' in html, "有", "ok")
 test("HTML 跳读折叠.skip-fold", 'skip-fold' in html, "有", "ok")
 test("HTML 跳读预览.skip-preview", 'skip-preview' in html, "有", "ok")
 test("HTML 语义块.block", 'block' in html and 'data-pri' in html, "有", "ok")
@@ -209,8 +209,8 @@ test("HTML 无旧标签简单读", '简单读' not in html, "无", "ok")
 test("HTML 无旧标签可略读", '可略读' not in html, "无", "ok")
 test("HTML 无段落编号显示", '段落' not in html and 'Paragraph' not in html, "无编号", "ok")
 test("HTML expandAll切换状态", '恢复折叠' in html, "有切换", "ok")
-test("HTML 模式切换保留滚动", 'scrollTop' in html, "有保留", "ok")
-test("HTML 导航跳过不可见", 'offsetParent' in html, "有跳过", "ok")
+test("HTML 模式切换保留滚动", 'restorePosition' in html and 'capturePosition' in html, "有保留", "ok")
+test("HTML 导航跳过不可见", 'details:not([open])' in html and 'visible(' in html, "有跳过", "ok")
 test("HTML prefers-reduced-motion", "prefers-reduced-motion" in html, "有", "ok")
 test("HTML 保守模式渲染", 'conservative' in html or 'DATA.conservative' in html, "有", "ok")
 
@@ -286,11 +286,45 @@ seg1 = r_sem['segments'][0]
 test("段1·1语义块含3句", len(seg1['blocks'])==1 and len(seg1['blocks'][0]['sentences'])==3, "1块3句", f"{len(seg1['blocks'])}块{len(seg1['blocks'][0]['sentences'])}句")
 
 # ========== 18. 浏览器交互验证标注 ==========
-test("浏览器交互验证(高亮/减淡/折叠/导航)需人工或Playwright", True, "未自动化", "标注")
+test("真实浏览器交互验证脚本存在", os.path.exists(os.path.join(HERE,'browser_test.mjs')), "Chrome CDP", "已检查")
+
+# ========== 19. V2.3.2 emphasis 与原文数据 ==========
+em_diag = r_sem['_meta']['diagnostic']['emphasis']
+test("emphasis·示例两处被接受", em_diag['accepted']==2, "2", str(em_diag))
+test("emphasis·全文密度不超过5%", em_diag['characters']<=em_diag['limit'] and em_diag['ratio']<=0.05, "≤5%", str(em_diag))
+em_blocks = r_sem['segments'][0]['blocks'][0]['emphasis']
+test("emphasis·区间原文精确匹配", all(r_sem['segments'][0]['blocks'][0]['text'][e['start']:e['end']]==e['text'] for e in em_blocks), "匹配", str(em_blocks))
+test("emphasis·每块最多3处每处最多15字", all(len(b.get('emphasis',[]))<=3 and all(e['end']-e['start']<=15 for e in b.get('emphasis',[])) for s in r_sem['segments'] for b in s['blocks']), "合法", "ok")
+invalid_em = {"goal":"聚焦阅读","blocks":[{"para_idx":0,"text":analyzer.split_paragraphs(TEST_TEXT)[0],"role":"理论定义","priority":"精读","preview":None,"emphasis":[
+    {"start":0,"end":4,"text":"不匹配","score":1},
+    {"start":-1,"end":2,"score":0.9},
+    {"start":0,"end":999,"score":0.8},
+    {"start":0,"end":4,"score":0.7},
+    {"start":2,"end":6,"score":0.6},
+    {"start":8,"end":12,"score":0.5},
+    {"start":14,"end":18,"score":0.4},
+    {"start":20,"end":24,"score":0.3}
+]}]}
+r_invalid = analyzer.route_text(TEST_TEXT, analysis=invalid_em)
+inv_diag = r_invalid['_meta']['diagnostic']['emphasis']
+reasons = {d['reason'] for d in inv_diag['dropped']}
+test("emphasis·拒绝文本不匹配", 'text_mismatch' in reasons, "有", str(reasons))
+test("emphasis·拒绝越界区间", 'invalid_span' in reasons, "有", str(reasons))
+test("emphasis·拒绝重叠区间", 'overlap' in reasons, "有", str(reasons))
+test("emphasis·错误强调不破坏正文", r_invalid['segments'][0]['original']==analyzer.split_paragraphs(TEST_TEXT)[0], "原文不变", "ok")
+test("原文数据·保留完整输入", r_sem.get('original_text')==TEST_TEXT, "逐字一致", "ok")
+test("HTML·无逐段查看原文按钮", 'segfoot' not in html and 'toggleSegView' not in html, "无", "ok")
+test("HTML·精读暖色背景", '#FFF2E9' in html and '--focus-fill-0' in html, "有", "ok")
+test("HTML·深色高亮暖褐", '#5A4718' in html, "有", "ok")
+test("HTML·区域背景衰减", all('depth-'+str(i) in html for i in range(4)), "4级", "ok")
+test("HTML·速览基准字重", 'font-weight:400' in html and 'max-width:36em' in html, "有", "ok")
+test("HTML·跨行高亮连续", 'box-decoration-break:clone' in html, "有", "ok")
+test("HTML·原文仅一份DOM", 'renderOriginal' in html and 'original-full' in html, "有", "ok")
+test("HTML·强调安全文本节点", 'appendEmphasized' in html and 'createTextNode' in html, "有", "ok")
 
 # ========== 输出 ==========
 print("="*60)
-print("Reading Accessibility Skill V2.3 测试报告")
+print("Reading Accessibility Skill V2.3.2 测试报告")
 print("="*60)
 for name,status,exp,act in RESULTS:
     print(f"[{status}] {name}")

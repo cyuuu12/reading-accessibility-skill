@@ -1,0 +1,331 @@
+{
+  "browser": "Chrome headless (CDP)",
+  "timestamp": "2026-11-24T14:32:44.849Z",
+  "passed": 34,
+  "failed": 0,
+  "results": [
+    {
+      "name": "浏览器无脚本异常",
+      "status": "通过",
+      "detail": []
+    },
+    {
+      "name": "精读暖底/3-4px边框计算样式生效",
+      "status": "通过",
+      "detail": {
+        "focusBg": "rgb(255, 242, 233)",
+        "focusBorder": "3px",
+        "focusColor": "rgb(26, 26, 26)",
+        "strong": [
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "语义翻译和交际翻译"
+          },
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "尽可能将二者结合起来"
+          }
+        ],
+        "skimColor": "rgb(26, 26, 26)",
+        "skimWeight": "400",
+        "skimBg": "rgba(0, 0, 0, 0)",
+        "skimText": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "skimExpected": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "bodyColor": "rgb(26, 26, 26)",
+        "folds": 1,
+        "skipOpen": false,
+        "preview": "《红楼梦》第117回原文引文",
+        "previewVisible": true,
+        "regions": 3,
+        "blocks": 7,
+        "perSegmentButtons": 0,
+        "originalButtons": 1
+      }
+    },
+    {
+      "name": "精读仅局部strong加粗且深色强调",
+      "status": "通过",
+      "detail": [
+        {
+          "weight": "700",
+          "color": "rgb(168, 67, 31)",
+          "text": "语义翻译和交际翻译"
+        },
+        {
+          "weight": "700",
+          "color": "rgb(168, 67, 31)",
+          "text": "尽可能将二者结合起来"
+        }
+      ]
+    },
+    {
+      "name": "速览为清晰基准态且不丢字",
+      "status": "通过",
+      "detail": {
+        "focusBg": "rgb(255, 242, 233)",
+        "focusBorder": "3px",
+        "focusColor": "rgb(26, 26, 26)",
+        "strong": [
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "语义翻译和交际翻译"
+          },
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "尽可能将二者结合起来"
+          }
+        ],
+        "skimColor": "rgb(26, 26, 26)",
+        "skimWeight": "400",
+        "skimBg": "rgba(0, 0, 0, 0)",
+        "skimText": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "skimExpected": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "bodyColor": "rgb(26, 26, 26)",
+        "folds": 1,
+        "skipOpen": false,
+        "preview": "《红楼梦》第117回原文引文",
+        "previewVisible": true,
+        "regions": 3,
+        "blocks": 7,
+        "perSegmentButtons": 0,
+        "originalButtons": 1
+      }
+    },
+    {
+      "name": "速览正文对比度≥4.5:1",
+      "status": "通过",
+      "detail": 17.40432753274219
+    },
+    {
+      "name": "相邻同类合并区域且跳读跨段合并",
+      "status": "通过",
+      "detail": {
+        "regions": 3,
+        "blocks": 7,
+        "folds": 1
+      }
+    },
+    {
+      "name": "跳读预览关闭时可见",
+      "status": "通过",
+      "detail": "《红楼梦》第117回原文引文"
+    },
+    {
+      "name": "无逐段原文按钮，仅全局切换",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "点击跳读可展开完整原文",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "全部展开与按钮状态一致",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "恢复折叠与按钮状态一致",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "点句聚焦且静态块填充让位",
+      "status": "通过",
+      "detail": {
+        "activeBg": "rgb(255, 243, 205)",
+        "currentBg": "rgba(0, 0, 0, 0)",
+        "dimColor": "rgb(95, 95, 95)",
+        "dimmed": 6,
+        "cur": 0
+      }
+    },
+    {
+      "name": "其他语义块明显减淡",
+      "status": "通过",
+      "detail": {
+        "activeBg": "rgb(255, 243, 205)",
+        "currentBg": "rgba(0, 0, 0, 0)",
+        "dimColor": "rgb(95, 95, 95)",
+        "dimmed": 6,
+        "cur": 0
+      }
+    },
+    {
+      "name": "浅色减淡对比度≥4.5:1",
+      "status": "通过",
+      "detail": 6.385487353255615
+    },
+    {
+      "name": "点击空白不改变焦点",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "深色高亮与页面背景有可测亮度差",
+      "status": "通过",
+      "detail": {
+        "bg": "rgb(30, 30, 30)",
+        "fg": "rgb(230, 230, 230)",
+        "hl": "rgb(90, 71, 24)",
+        "dim": "rgb(153, 153, 153)"
+      }
+    },
+    {
+      "name": "深色高亮文字对比度≥4.5:1",
+      "status": "通过",
+      "detail": 7.162369757735898
+    },
+    {
+      "name": "深色减淡文字对比度≥4.5:1",
+      "status": "通过",
+      "detail": 5.851524838036664
+    },
+    {
+      "name": "关闭高亮恢复填充并清除减淡",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "键盘导航不进入折叠内容",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "切换原文定位当前阅读块而非页首",
+      "status": "通过",
+      "detail": {
+        "id": "s1b0",
+        "top": 113
+      }
+    },
+    {
+      "name": "全局原文与输入逐字一致且包含折叠内容",
+      "status": "通过",
+      "detail": {
+        "same": true,
+        "strong": 0,
+        "folds": 0,
+        "assisted": 0,
+        "buttons": 0
+      }
+    },
+    {
+      "name": "原文模式无强调/折叠/辅助文本副本",
+      "status": "通过",
+      "detail": {
+        "same": true,
+        "strong": 0,
+        "folds": 0,
+        "assisted": 0,
+        "buttons": 0
+      }
+    },
+    {
+      "name": "返回辅助版无重复渲染",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "模式切换保留当前阅读位置",
+      "status": "通过",
+      "detail": {
+        "id": "s1b0",
+        "top": 113
+      }
+    },
+    {
+      "name": "快速浏览速览不默认减淡",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "完整阅读一次展示全部原文",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "返回聚焦阅读跳读恢复可逆折叠",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "长精读区域背景逐级衰减",
+      "status": "通过",
+      "detail": {
+        "bg": [
+          "rgb(58, 42, 30)",
+          "rgb(50, 38, 30)",
+          "rgb(50, 38, 30)",
+          "rgb(42, 34, 29)",
+          "rgb(35, 31, 28)"
+        ]
+      }
+    },
+    {
+      "name": "连续块无重复边框且区域边框始终保留",
+      "status": "通过",
+      "detail": {
+        "bg": [
+          "rgb(58, 42, 30)",
+          "rgb(50, 38, 30)",
+          "rgb(50, 38, 30)",
+          "rgb(42, 34, 29)",
+          "rgb(35, 31, 28)"
+        ],
+        "borders": [
+          "0px",
+          "0px",
+          "0px",
+          "0px",
+          "0px"
+        ],
+        "regionBorders": [
+          "3px",
+          "3px",
+          "3px",
+          "3px",
+          "3px"
+        ],
+        "regions": 2,
+        "folds": 2
+      }
+    },
+    {
+      "name": "同主题跳读合并、跨主题不合并",
+      "status": "通过",
+      "detail": {
+        "folds": 2
+      }
+    },
+    {
+      "name": "护眼主题字号统一且对比度≥4.5:1",
+      "status": "通过",
+      "detail": {
+        "size": "20px",
+        "fg": "rgb(73, 70, 61)",
+        "bg": "rgb(244, 236, 216)",
+        "contrast": 8.01007862167861
+      }
+    },
+    {
+      "name": "移动端无横向溢出且触摸目标≥44px",
+      "status": "通过",
+      "detail": {
+        "overflow": false,
+        "minButton": 44,
+        "width": 390
+      }
+    },
+    {
+      "name": "全程无浏览器脚本异常",
+      "status": "通过",
+      "detail": []
+    }
+  ]
+}
