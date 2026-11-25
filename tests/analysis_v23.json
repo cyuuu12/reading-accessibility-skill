@@ -1,5 +1,12 @@
 {
   "goal": "聚焦阅读",
+  "focus_threshold": 0.60,
+  "review": {
+    "performed": true,
+    "attempt": 1,
+    "summary": "复核四个精读块与两个跳读引文；未发现可降级的背景、重复解释或非必要过渡。",
+    "exception_reason": "四个精读块分别为理论定义、方法、概念定义和方法局限，均为理解本文的必要论证；66.67% 字符占比有依据保留。"
+  },
   "blocks": [
     {
       "para_idx": 0,

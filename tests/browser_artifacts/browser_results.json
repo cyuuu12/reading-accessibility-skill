@@ -1,7 +1,7 @@
 {
   "browser": "Chrome headless (CDP)",
-  "timestamp": "2026-11-25T08:02:57.125Z",
-  "passed": 40,
+  "timestamp": "2026-11-25T14:06:59.791Z",
+  "passed": 54,
   "failed": 0,
   "results": [
     {
@@ -194,14 +194,29 @@
       "detail": 6.385487353255615
     },
     {
-      "name": "点击空白不改变焦点",
+      "name": "点击跳读预览只展开不进入聚焦",
       "status": "通过",
       "detail": ""
     },
     {
-      "name": "点击跳读预览只展开不进入聚焦",
+      "name": "真实空白点击清除聚焦但保留高亮功能",
       "status": "通过",
       "detail": ""
+    },
+    {
+      "name": "空白取消后可立即重新聚焦",
+      "status": "通过",
+      "detail": ""
+    },
+    {
+      "name": "Esc清除聚焦且不修改设置",
+      "status": "通过",
+      "detail": {
+        "cur": -1,
+        "fs": "18",
+        "th": "light",
+        "mode": "聚焦阅读"
+      }
     },
     {
       "name": "深色高亮与页面背景有可测亮度差",
@@ -271,6 +286,21 @@
       "detail": ""
     },
     {
+      "name": "原文模式可视觉层聚焦且文本不变",
+      "status": "通过",
+      "detail": {
+        "cur": 0,
+        "active": true,
+        "same": true,
+        "dimmed": 6
+      }
+    },
+    {
+      "name": "原文模式Esc清除聚焦",
+      "status": "通过",
+      "detail": ""
+    },
+    {
       "name": "模式切换保留当前阅读位置",
       "status": "通过",
       "detail": {
@@ -292,6 +322,207 @@
       "name": "返回聚焦阅读跳读恢复可逆折叠",
       "status": "通过",
       "detail": ""
+    },
+    {
+      "name": "标题渲染h1/h2/h3且文字正确",
+      "status": "通过",
+      "detail": {
+        "tags": [
+          "H1",
+          "H2",
+          "H3"
+        ],
+        "texts": [
+          "文档主标题",
+          "一级章节",
+          "二级章节"
+        ],
+        "inRegion": [
+          false,
+          false,
+          false
+        ],
+        "bg": [
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)"
+        ],
+        "weight": [
+          "700",
+          "700",
+          "700"
+        ],
+        "sizes": [
+          "25.2px",
+          "23.4px",
+          "20.7px"
+        ],
+        "regions": 1
+      }
+    },
+    {
+      "name": "标题无区域底色且可读层级",
+      "status": "通过",
+      "detail": {
+        "tags": [
+          "H1",
+          "H2",
+          "H3"
+        ],
+        "texts": [
+          "文档主标题",
+          "一级章节",
+          "二级章节"
+        ],
+        "inRegion": [
+          false,
+          false,
+          false
+        ],
+        "bg": [
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)"
+        ],
+        "weight": [
+          "700",
+          "700",
+          "700"
+        ],
+        "sizes": [
+          "25.2px",
+          "23.4px",
+          "20.7px"
+        ],
+        "regions": 1
+      }
+    },
+    {
+      "name": "色差用例两端锚点定位成功",
+      "status": "通过",
+      "detail": [
+        "s2b0",
+        "s4b0"
+      ]
+    },
+    {
+      "name": "light主题连续精读背景一致",
+      "status": "通过",
+      "detail": {
+        "theme": "light",
+        "pair": [
+          {
+            "bg": "rgb(255, 242, 233)",
+            "color": "rgb(26, 26, 26)",
+            "borderLeftColor": "rgb(204, 100, 55)",
+            "opacity": "1",
+            "focusFill": "#FFF2E9",
+            "regionPri": "精读",
+            "sameRegion": true
+          },
+          {
+            "bg": "rgb(255, 242, 233)",
+            "color": "rgb(26, 26, 26)",
+            "borderLeftColor": "rgb(204, 100, 55)",
+            "opacity": "1",
+            "focusFill": "#FFF2E9",
+            "regionPri": "精读",
+            "sameRegion": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "dark主题连续精读背景一致",
+      "status": "通过",
+      "detail": {
+        "theme": "dark",
+        "pair": [
+          {
+            "bg": "rgb(58, 42, 30)",
+            "color": "rgb(230, 230, 230)",
+            "borderLeftColor": "rgb(228, 138, 95)",
+            "opacity": "1",
+            "focusFill": "#3A2A1E",
+            "regionPri": "精读",
+            "sameRegion": true
+          },
+          {
+            "bg": "rgb(58, 42, 30)",
+            "color": "rgb(230, 230, 230)",
+            "borderLeftColor": "rgb(228, 138, 95)",
+            "opacity": "1",
+            "focusFill": "#3A2A1E",
+            "regionPri": "精读",
+            "sameRegion": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "sepia主题连续精读背景一致",
+      "status": "通过",
+      "detail": {
+        "theme": "sepia",
+        "pair": [
+          {
+            "bg": "rgb(239, 224, 200)",
+            "color": "rgb(46, 42, 32)",
+            "borderLeftColor": "rgb(157, 91, 53)",
+            "opacity": "1",
+            "focusFill": "#EFE0C8",
+            "regionPri": "精读",
+            "sameRegion": true
+          },
+          {
+            "bg": "rgb(239, 224, 200)",
+            "color": "rgb(46, 42, 32)",
+            "borderLeftColor": "rgb(157, 91, 53)",
+            "opacity": "1",
+            "focusFill": "#EFE0C8",
+            "regionPri": "精读",
+            "sameRegion": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "聚焦状态下同区两块填充同步让位",
+      "status": "通过",
+      "detail": {
+        "active": 1,
+        "focusActive": true,
+        "bgs": [
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)"
+        ]
+      }
+    },
+    {
+      "name": "取消聚焦后色差区间背景一致恢复",
+      "status": "通过",
+      "detail": {
+        "unfocused": true,
+        "highlightNoSelection": true,
+        "highlightSelected": {
+          "active": 1,
+          "focusActive": true,
+          "bgs": [
+            "rgba(0, 0, 0, 0)",
+            "rgba(0, 0, 0, 0)"
+          ]
+        },
+        "afterRestore": true,
+        "afterModes": "rgb(255, 242, 233)"
+      }
+    },
+    {
+      "name": "模式切换不改变未聚焦同区背景",
+      "status": "通过",
+      "detail": {
+        "beforeModeBg": "rgb(255, 242, 233)",
+        "afterModes": "rgb(255, 242, 233)"
+      }
     },
     {
       "name": "长精读区域背景统一且不衰减",
@@ -391,6 +622,14 @@
         "overflow": false,
         "minButton": 44,
         "width": 390
+      }
+    },
+    {
+      "name": "移动端触摸聚焦后可点空白取消",
+      "status": "通过",
+      "detail": {
+        "mobileFocused": true,
+        "mobileCleared": true
       }
     },
     {

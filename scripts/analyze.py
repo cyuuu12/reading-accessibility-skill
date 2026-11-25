@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-analyze.py — 统一处理层（V2.3.2）
+analyze.py — 统一处理层（V3.2.4）
 
 三层分工：
 - Agent（宿主模型）：根据全文上下文判断语义功能与阅读优先级，按 schema 输出结构化分析。
-- Python（本模块）：原文切分、数据结构、边界校验、保真校验、结果整合、诊断统计。
+- Python（本模块）：原文切分、数据结构、边界校验、保真校验、结果整合、诊断统计与复核状态。
 - HTML：只呈现与交互，不重新判断语义重要性。
 
 无 LLM 语义分析时 → 保守模式：全文按原文呈现，不贴标签，不折叠。
-
 零依赖。
 """
 import re
 
 _SENT_SPLIT = re.compile(r'([。！？；.!?])')
+DEFAULT_FOCUS_THRESHOLD = 0.60
+STRUCTURAL_ROLES = {"标题", "章节标题", "分隔符", "分隔线"}
+MAX_REVIEWS = 2
+_CONSERVATIVE_HEADING = re.compile(
+    r'^(?:第[一二三四五六七八九十百0-9]+[章节部分讲]\s*[^，。；："“”]{0,24}|'
+    r'附录|引言|绪论|结论|参考文献|[一二三四五六七八九十]+、\s*[^，。；："“”]{0,24}|'
+    r'[0-9]+(?:\.[0-9]+)+\s*[^，。；："“”]{0,24}|[0-9]+、\s*[^，。；："“”]{0,24})$'
+)
 
 
 def split_sentences(text):
@@ -46,22 +53,65 @@ def _nonws(s):
     return re.sub(r'\s', '', s)
 
 
+def _is_structural_block(block):
+    """标题和分隔符是结构，不参与阅读策略比例。
+
+    以 Agent 给出的 role/structure/heading_level 判断；不从正文关键词重新推断。
+    """
+    role = block.get("role")
+    structure = block.get("structure")
+    return (role in STRUCTURAL_ROLES or structure in STRUCTURAL_ROLES
+            or isinstance(block.get("heading_level"), int))
+
+
+def _normalize_analysis_block(raw):
+    """规范化 Agent 块：标题优先级强制置空，heading_level 限制为 1-6。"""
+    out = dict(raw)
+    role = out.get("role")
+    structure = out.get("structure")
+    level = out.get("heading_level")
+    if isinstance(level, bool) or not isinstance(level, int) or not 0 <= level <= 6:
+        level = None
+    out["heading_level"] = level
+    structural = (role in STRUCTURAL_ROLES or structure in STRUCTURAL_ROLES
+                  or level is not None)
+    if structural:
+        out["priority"] = None
+    return out
+
+
+def _looks_like_conservative_heading(paragraph):
+    """保守模式只识别独立成行、明确编号/章节结构的标题。
+
+    不识别正文中的书名号、引用或句内编号；不确定时保留原文。
+    """
+    stripped = paragraph.strip()
+    return (0 < len(_nonws(stripped)) <= 30
+            and bool(_CONSERVATIVE_HEADING.fullmatch(stripped))
+            and not any(mark in stripped for mark in ("《", "》", "“", "”", "：", ",")))
+
+
 # ── 保守模式 ──────────────────────────────────────
 def _conservative_route(text, paras, high_risk=False):
     """无 LLM 语义分析时：全文按原文呈现，不贴标签，不折叠。"""
     segments = []
     for i, p in enumerate(paras, 1):
         sents = split_sentences(p)
+        heading = _looks_like_conservative_heading(p)
+        structural = heading or p.strip() in {"---", "***", "___"}
         segments.append({
             "seg_no": i,
-            "priority": None,          # 无标签
-            "role": None,
+            "priority": None,
+            "role": "标题" if heading else ("分隔符" if p.strip() in {"---", "***", "___"} else None),
+            "heading_level": 2 if heading else None,
             "reason": None,
             "preview": None,
             "original": p,
             "sentences": sents,
-            "blocks": [{"text": p, "role": None, "priority": None,
-                        "sentences": sents, "preview": None}],
+            "blocks": [{"text": p, "role": "标题" if heading else ("分隔符" if p.strip() in {"---", "***", "___"} else None),
+                        "priority": None,
+                        "sentences": sents, "preview": None,
+                        "heading_level": 2 if heading else None}],
             "foldable": False,
         })
     return {
@@ -120,13 +170,16 @@ def _build_blocks_from_analysis(paragraph, analysis_blocks):
     for b in analysis_blocks:
         text = b.get("text", "").strip()
         sents = split_sentences(text)
+        normalized = _normalize_analysis_block(b)
         blocks.append({
             "text": text,
-            "role": b.get("role", "陈述"),
-            "priority": b.get("priority", "速览"),
+            "role": normalized.get("role", "陈述"),
+            "structure": normalized.get("structure"),
+            "heading_level": normalized.get("heading_level"),
+            "priority": normalized.get("priority", "速览"),
             "sentences": sents,
-            "preview": b.get("preview"),
-            "emphasis": b.get("emphasis") or [],
+            "preview": normalized.get("preview"),
+            "emphasis": normalized.get("emphasis") or [],
         })
     return blocks
 
@@ -225,7 +278,8 @@ def _merge_adjacent_skip_blocks(blocks):
     for b in blocks[1:]:
         prev = merged[-1]
         if (prev["priority"] == "跳读" and b["priority"] == "跳读"
-                and prev["role"] == b["role"]):
+                and prev["role"] == b["role"]
+                and not _is_structural_block(prev) and not _is_structural_block(b)):
             # 合并
             prev["text"] = prev["text"] + b["text"]
             prev["sentences"] = prev["sentences"] + b["sentences"]
@@ -248,25 +302,130 @@ def _seg_priority_from_blocks(blocks):
     return None
 
 
-# ── 诊断统计（不阻断） ────────────────────────────
-def _diagnostic(segments):
-    """统计精读占比、段内切分率、单标签整段占比、问题段落。不阻断输出。"""
-    total, focus = 0, 0
+# ── 诊断统计（块级口径；超阈值只触发复核，不机械降级） ──
+def _diagnostic(segments, threshold=DEFAULT_FOCUS_THRESHOLD):
+    """块级统计。标题/分隔符等结构性块按 role/structure/heading_level 过滤。
+
+    focus_char_ratio 的分子分母都只包含带 priority 的正文块；
+    block_lengths 保留每个块（含结构性块）的字符数与句数，供误降级判断。
+    focus_ratio 是旧版段级聚合口径，仅作兼容对照，不再用于阈值判断。
+    """
+    flat = []
+    for seg in segments:
+        for bi, b in enumerate(seg.get("blocks", [])):
+            flat.append({
+                "seg_no": seg["seg_no"], "block_idx": bi, "text": b.get("text", ""),
+                "role": b.get("role"), "structure": b.get("structure"),
+                "heading_level": b.get("heading_level"),
+                "priority": b.get("priority"),
+                "sentences": b.get("sentences") or split_sentences(b.get("text", "")),
+                "structural": _is_structural_block(b),
+            })
+    content = [b for b in flat
+               if not b["structural"] and b["priority"] in {"精读", "速览", "跳读"}]
+    total_chars = sum(len(_nonws(b["text"])) for b in content)
+    focus_chars = sum(len(_nonws(b["text"])) for b in content if b["priority"] == "精读")
+    skip_chars = sum(len(_nonws(b["text"])) for b in content if b["priority"] == "跳读")
+    n_blocks = len(flat)
+    n_sents = sum(len(b["sentences"]) for b in flat)
+    block_lengths = [{
+        "seg_no": b["seg_no"], "block_idx": b["block_idx"], "role": b["role"],
+        "priority": b["priority"], "structural": b["structural"],
+        "char_count": len(_nonws(b["text"])),
+        "sentence_count": len(split_sentences(b["text"])),
+    } for b in flat]
+    ratio = focus_chars / total_chars if total_chars else 0.0
+    # 兼容字段：旧版按自然段聚合，只要段内有精读块就整段计入。
+    seg_total, seg_focus = 0, 0
     for seg in segments:
         n = len(_nonws(seg["original"]))
-        total += n
+        seg_total += n
         if seg["priority"] == "精读":
-            focus += n
-    ratio = focus / total if total else 0
-    n_blocks = sum(len(s["blocks"]) for s in segments)
-    n_sents = sum(len(s.get("sentences", [])) for s in segments)
+            seg_focus += n
+    legacy_ratio = seg_focus / seg_total if seg_total else 0.0
     return {
-        "focus_ratio": round(ratio, 3),
-        "focus_ratio_exceeded": ratio > 0.6,
+        "threshold": threshold,
+        "focus_char_ratio": round(ratio, 5),
+        "focus_char_exceeded": ratio > threshold,
+        "focus_block_ratio": round(
+            sum(1 for b in content if b["priority"] == "精读") / len(content), 5
+        ) if content else 0.0,
+        "skip_char_ratio": round(skip_chars / total_chars, 5) if total_chars else 0.0,
+        "skip_block_count": sum(1 for b in content if b["priority"] == "跳读"),
+        "content_block_count": len(content),
+        "content_char_count": total_chars,
+        "structural_block_count": sum(1 for b in flat if b["structural"]),
+        "block_lengths": block_lengths,
+        "focus_ratio": round(legacy_ratio, 5),
+        "focus_ratio_exceeded": ratio > threshold,
+        "focus_ratio_basis": "block_priority_char_nonws; structural_roles_excluded",
         "total_blocks": n_blocks,
         "total_sentences": n_sents,
         "merge_effective": n_blocks < n_sents if n_sents > 0 else False,
     }
+
+
+def _valid_review(review):
+    return (isinstance(review, dict) and review.get("performed") is True
+            and isinstance(review.get("attempt"), int) and 1 <= review["attempt"] <= MAX_REVIEWS
+            and bool(str(review.get("summary", "")).strip()))
+
+
+def _review_state(diagnostic, analysis):
+    """超阈值与零跳读复核状态。复核由 Agent 执行后随 analysis 传入。
+
+    - required_not_performed：不得把当前结果当作已复核辅助版。
+    - reviewed_ok：复核后低于阈值或已有合理跳读。
+    - exception_retained：仍超阈值/仍零跳读，但记录了明确例外原因。
+    - exception_missing：复核过但未记录原因，仍不得伪装合格。
+    """
+    threshold = diagnostic["threshold"]
+    review = analysis.get("review") if isinstance(analysis, dict) else None
+    skip_review = analysis.get("skip_review") if isinstance(analysis, dict) else None
+    states = {}
+
+    if diagnostic["focus_char_exceeded"]:
+        if not _valid_review(review):
+            states["focus"] = {"status": "required_not_performed",
+                               "attempts_allowed": MAX_REVIEWS}
+        elif diagnostic["focus_char_ratio"] > threshold:
+            if str(review.get("exception_reason", "")).strip():
+                states["focus"] = {"status": "exception_retained",
+                                   "attempt": review["attempt"],
+                                   "exception_reason": review["exception_reason"]}
+            else:
+                states["focus"] = {"status": "exception_missing",
+                                   "attempt": review["attempt"]}
+        else:
+            states["focus"] = {"status": "reviewed_ok", "attempt": review["attempt"]}
+    else:
+        states["focus"] = {"status": "not_required"}
+
+    # 较长文本零跳读只触发一次适用性复核；不制造跳读。
+    skip_required = (diagnostic["skip_block_count"] == 0
+                     and diagnostic["content_char_count"] >= 1000)
+    if skip_required:
+        if not _valid_review(skip_review):
+            states["skip"] = {"status": "required_not_performed",
+                              "basis": "long_content_with_zero_skip"}
+        elif diagnostic["skip_block_count"] == 0:
+            if str(skip_review.get("exception_reason", "")).strip():
+                states["skip"] = {"status": "zero_skip_retained",
+                                  "attempt": skip_review["attempt"],
+                                  "exception_reason": skip_review["exception_reason"]}
+            else:
+                states["skip"] = {"status": "zero_skip_reason_missing",
+                                  "attempt": skip_review["attempt"]}
+        else:
+            states["skip"] = {"status": "reviewed_ok", "attempt": skip_review["attempt"]}
+    else:
+        states["skip"] = {"status": "not_required"}
+
+    blocked = any(s["status"] in {
+        "required_not_performed", "exception_missing", "zero_skip_reason_missing"
+    } for s in states.values())
+    return {"states": states, "blocked": blocked,
+            "output_status": "blocked_pending_agent_review" if blocked else "ready"}
 
 
 # ── 模块化理解框架 ────────────────────────────────
@@ -275,7 +434,7 @@ def _build_modules(segments):
     for seg in segments:
         for b in seg["blocks"]:
             role = b.get("role")
-            if not role or role in seen:
+            if not role or role in seen or _is_structural_block(b):
                 continue
             seen.add(role)
             modules.append({"title": role, "content": b["text"][:60] + ("…" if len(b["text"]) > 60 else "")})
@@ -283,7 +442,8 @@ def _build_modules(segments):
 
 
 # ── 主入口 ────────────────────────────────────────
-def route_text(text, goal="general", high_risk=False, analysis=None):
+def route_text(text, goal="general", high_risk=False, analysis=None,
+               focus_threshold=None):
     """统一处理入口。
 
     参数:
@@ -292,8 +452,10 @@ def route_text(text, goal="general", high_risk=False, analysis=None):
       high_risk: 高风险文本（默认完整阅读，不折叠）
       analysis: Agent 语义分析结果（dict），按 routing.md schema。
                 None 时退回保守模式。
+      focus_threshold: 精读字符占比阈值；analysis["focus_threshold"] 优先。
 
-    返回 dict，供 build_reader.py 和 Markdown 共用。
+    返回 dict，供 build_reader.py 和 Markdown 共用。超阈值或长文零跳读时
+    返回复核状态；Agent 复核结果通过 analysis["review"] / analysis["skip_review"] 传入。
     """
     paras = split_paragraphs(text)
 
@@ -364,7 +526,16 @@ def route_text(text, goal="general", high_risk=False, analysis=None):
 
     all_blocks = [b for seg in segments for b in seg["blocks"]]
     emphasis_diagnostic = _sanitize_emphasis(all_blocks, text)
-    diagnostic = _diagnostic(segments)
+    configured = analysis.get("focus_threshold") if isinstance(analysis, dict) else None
+    if isinstance(configured, (int, float)) and not isinstance(configured, bool) and 0 < configured <= 1:
+        threshold = float(configured)
+    elif isinstance(focus_threshold, (int, float)) and not isinstance(focus_threshold, bool) and 0 < focus_threshold <= 1:
+        threshold = float(focus_threshold)
+    else:
+        threshold = DEFAULT_FOCUS_THRESHOLD
+    diagnostic = _diagnostic(segments, threshold)
+    review = _review_state(diagnostic, analysis)
+    diagnostic["review"] = review
     diagnostic["emphasis"] = emphasis_diagnostic
     modules = _build_modules(segments)
     mode = "完整阅读" if high_risk else (goal if goal in ("完整阅读", "聚焦阅读", "快速浏览") else "聚焦阅读")
@@ -377,6 +548,8 @@ def route_text(text, goal="general", high_risk=False, analysis=None):
         "segments": segments,
         "original_text": text,
         "conservative": False,
+        "requires_review": review["blocked"],
+        "output_status": review["output_status"],
         "_meta": {"goal": goal, "diagnostic": diagnostic, "problem_paras": problem_paras},
     }
 

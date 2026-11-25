@@ -1,36 +1,43 @@
-# 阅读辅助 Skill（Reading Accessibility）V2.3.2
+# 阅读辅助 Skill（Reading Accessibility）V3.2.4
 
-面向“阅读困难”的文本辅助工具（非医学诊断）。Agent 负责全文语义分析与阅读策略，Python 负责切分、校验、保真和诊断，HTML 只负责呈现与交互。
+面向“阅读困难”的文本辅助工具（非医学诊断）。Agent 负责全文语义分析与阅读策略，Python 负责切分、校验、保真、统计与复核状态，HTML 只负责呈现与交互。
 
-V2.3.2 在 V2.3 基础上增量优化视觉与操作：统一强度连续视觉区域、区域起点间隙、局部关键文字强调、速览零信息损失基准态、深色聚焦高亮、全局原文逐字恢复且无辅助视觉残留，并新增真实 Chrome 浏览器验收。
+V3.2.4 修复哲学论文测试报告暴露的五类问题：块级统计口径、超阈值与零跳读复核、标题层级、空白/Esc 取消聚焦、色差区间定位。保留 V2.3.2 的统一视觉区域、emphasis、原文逐字恢复、三主题与移动端能力。
 
-## 三种阅读行为
+## 阅读策略与统计
 
 | 行为 | 呈现 |
 |---|---|
 | 精读 | 低饱和暖底、橙红区域边框、局部 `<strong>`；不整段加粗或染色 |
 | 速览 | 无填充、蓝灰细边、正常正文色和字重；不删字、不改写，默认直接可读 |
 | 跳读 | 中性灰底、始终可见的内容预览、可逆折叠；同主题相邻块合并 |
+| 标题/分隔符 | 结构，不参与策略比例；标题渲染 h1/h2/h3 并断开视觉区域 |
 
-连续同策略块共享视觉区域。精读背景保持统一强度，不做衰减；每个区域起点保留 10px 间隙，边框自然收口，无外框、阴影或卡片化。标题、列表、引文、对照、表格和分隔线按 Agent 角色信息断区；合并不改变原文顺序、语义块数据或策略。
+块级诊断输出：
+- `focus_char_ratio`：精读非空白字符 / 带 priority 的正文非空白字符。
+- `focus_block_ratio`：精读块数 / 带 priority 的正文块数。
+- `skip_char_ratio`、`skip_block_count`、`content_block_count`、`structural_block_count`。
+- `block_lengths`：每块字符数、句数、角色和是否结构性块，用于识别长论证段被误降级。
+- `focus_ratio` 仅保留旧版段级聚合结果作兼容对照，不再用于阈值判断。
 
-## Agent 语义分析与 emphasis
+默认阈值 `0.60`，可配置。超阈值时 `output_status=blocked_pending_agent_review`；Agent 最多复核两次，仍超阈值必须记录 `exception_reason`。长文零跳读触发适用性复核，复核后仍为零必须记录原因；不得机械降级，也不得强制制造跳读。
 
-第一步语义分析由宿主模型完成，不得用关键词规则或脚本替代。schema 详见 `references/routing.md`。
+## 标题层级
 
-可选 `emphasis` 使用相对语义块的 `[start,end)` 精确字符区间：
-- Python 校验原文匹配、越界、重叠和块内归属。
-- 每块最多 3 处，每处最多 15 字，全文最多 5%，超限按 `score` 截断。
-- HTML 用文本节点与 `<strong>` 安全插入，不把原文拼成 HTML。
-- 无有效强调时保持普通正文，不强行制造重点。
+- Agent schema 使用 `role:"标题"` + `heading_level`；0 为文档主标题，1 为一级章节，2 为二级章节，3+ 按实际递增。
+- 标题 `priority` 由 Python 强制置空，不进精读比例，不自动折叠，不加精读暖底或速览边框。
+- HTML 渲染 `<h1>`/`<h2>`/`<h3>`，作为连续视觉区域边界。
+- 保守模式只识别独立成行且编号/章节结构明确的标题；不确定时保留原文。
+- 全局原文模式保留原始标题文字、顺序和换行。
 
 ## 聚焦与原文
 
-- 高亮默认关闭；开启后点句聚焦，当前句跨行连续高亮，其他块通过 `--fg-dim` 减淡。
-- 聚焦时静态暖底/灰底让位，避免背景叠加；关闭后完整恢复。
-- 白色、深色、护眼主题均要求高亮和减淡文字对比度 ≥4.5:1。
-- 导航跳过折叠/隐藏内容；折叠、展开、模式及原文切换后清理或恢复焦点。
-- 取消逐段“查看原文”；全局原文模式与输入逐字一致、恢复分段并包含全部折叠内容。
+- 高亮默认关闭；开启后点句聚焦，再次点句重新聚焦。
+- 点击阅读区空白、按 Esc 或移动端 tap 空白可取消聚焦；高亮功能保持开启。
+- 空白判定固定为：事件目标在 `#root` 本身，且不命中 `.sent`、`details`、`[data-control]`，且无文字选区。
+- 辅助视图和原文视图都支持逐句聚焦；原文视图只叠加视觉层，不改文本节点。
+- 聚焦时静态暖底/灰底让位；关闭或取消后完整恢复。
+- 全局原文与输入逐字一致、恢复分段，并清除加粗、强调色、填充、边框和区域标记。
 - 保留字号、行距、主题、三种模式、全部展开/恢复折叠、离线阅读和移动端适配。
 
 ## 文件结构
@@ -42,12 +49,16 @@ reading_accessibility/
 ├── assets/       attention_map_template.md · focus_version_template.md · reader_template.html
 ├── scripts/      acs.py · analyze.py · fidelity_check.py · build_reader.py
 └── tests/
-    ├── run_tests.py                 # 零依赖静态/数据测试
-    ├── browser_test.mjs             # Node + Chrome CDP 真实交互测试
-    ├── analysis_v23.json            # Agent 分析与 emphasis 示例
-    ├── test_text_v23.txt
-    ├── demo_reader_v232.html        # V2.3.2 演示阅读器
-    └── browser_artifacts/           # 浏览器结果 JSON、截图、长区域 fixture
+    ├── run_tests.py                    # 零依赖静态/数据测试
+    ├── browser_test.mjs                # Node + Chrome CDP 真实交互测试
+    ├── analysis_v23.json               # 缘分文本 Agent 分析与复核例外示例
+    ├── color_case_text_v324.txt        # 色差区间受控 fixture
+    ├── color_case_analysis_v324.json
+    ├── color_case_reader_v324.html
+    ├── block_stats_v324.json           # 可用文本块构成与长度分布
+    ├── V324_FIX_REPORT.md              # 本次五项修复报告
+    ├── demo_reader_v232.html           # 演示阅读器
+    └── browser_artifacts/              # 浏览器结果、样式记录、截图、fixtures
 ```
 
 ## 使用
@@ -61,23 +72,23 @@ python tests/run_tests.py
 node tests/browser_test.mjs   # 需本机 Chrome/Edge；可用 CHROME_PATH 指定
 ```
 
-浏览器测试使用 Node 内置 WebSocket 和 Chrome DevTools Protocol，不需要 Playwright、Selenium 或 npm 第三方包。它检查 computed style、实际鼠标点击、键盘导航、三主题对比度、原文逐字一致与无视觉残留、长区域统一填充和 390px 移动端布局，并输出截图。
+浏览器测试使用 Node 内置 WebSocket 和 Chrome DevTools Protocol，不依赖 Playwright、Selenium 或 npm 第三方包。它执行真实鼠标、键盘、触摸事件，读取 computed style，检查三主题对比度、标题层级、原文 diff、无残留切换、色差区间和 390px 移动端布局，并输出截图。
 
 ## 验证结果
 
-- 静态/数据自动化：**137 通过 / 0 失败**。
-- 真实 Chrome：**40 通过 / 0 失败**，结果见 `tests/browser_artifacts/browser_results.json`。
-- 截图：浅色初始、深色聚焦、390px 护眼移动端。
-- Markdown 保持 V2.2 的轻量方案，不模拟复杂交互，不承载三级标签。
+- 静态/数据自动化：**161 通过 / 0 失败**。
+- 真实 Chrome：**54 通过 / 0 失败**，结果见 `tests/browser_artifacts/browser_results.json`。
+- 色差样式记录与局部截图：`tests/browser_artifacts/color_case_styles.json`、`04-color-case-light.png`、`05-color-case-dark.png`、`06-color-case-sepia.png`。
+- Markdown 保持轻量方案，不模拟复杂交互，不承载三级标签。
 
 ## 边界
 
+- 原始哲学论文报告的 `skill-test/input.txt`、`analysis.json`、`route_result.json`、`reader.html` 不在仓库中；无法复算报告中的 28 块构成。色差用例使用用户给出的两个文字锚点构造，不冒充原始数据。
 - 不诊断、不承诺疗效；ACS 只表示文本结构复杂度，用户端默认隐藏数值。
 - 无 Agent 分析时进入保守模式：全文呈现、不贴标签、不折叠。
 - 能力检测按序降级：原生组件 → HTML 预览 → 独立 HTML 文件 → 仅文件链接 → 仅 Markdown／纯文本。
 - frontmatter 保持 `name: reading-accessibility`。
 - 浏览器验收覆盖 Chromium；Firefox、Safari 和真实触屏设备尚未逐一验证。
-- 结构边界依赖 Agent 的语义块/角色信息，复杂标题、表格和原文译文对照尚无独立结构类型。
 
 ## 许可
 MIT

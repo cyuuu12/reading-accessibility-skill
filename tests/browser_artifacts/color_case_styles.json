@@ -1,0 +1,85 @@
+{
+  "note": "受控fixture，非原始哲学论文报告数据",
+  "anchors": [
+    "s2b0",
+    "s4b0"
+  ],
+  "styles": {
+    "themes": {
+      "light": [
+        {
+          "bg": "rgb(255, 242, 233)",
+          "color": "rgb(26, 26, 26)",
+          "borderLeftColor": "rgb(204, 100, 55)",
+          "opacity": "1",
+          "focusFill": "#FFF2E9",
+          "regionPri": "精读",
+          "sameRegion": true
+        },
+        {
+          "bg": "rgb(255, 242, 233)",
+          "color": "rgb(26, 26, 26)",
+          "borderLeftColor": "rgb(204, 100, 55)",
+          "opacity": "1",
+          "focusFill": "#FFF2E9",
+          "regionPri": "精读",
+          "sameRegion": true
+        }
+      ],
+      "dark": [
+        {
+          "bg": "rgb(58, 42, 30)",
+          "color": "rgb(230, 230, 230)",
+          "borderLeftColor": "rgb(228, 138, 95)",
+          "opacity": "1",
+          "focusFill": "#3A2A1E",
+          "regionPri": "精读",
+          "sameRegion": true
+        },
+        {
+          "bg": "rgb(58, 42, 30)",
+          "color": "rgb(230, 230, 230)",
+          "borderLeftColor": "rgb(228, 138, 95)",
+          "opacity": "1",
+          "focusFill": "#3A2A1E",
+          "regionPri": "精读",
+          "sameRegion": true
+        }
+      ],
+      "sepia": [
+        {
+          "bg": "rgb(239, 224, 200)",
+          "color": "rgb(46, 42, 32)",
+          "borderLeftColor": "rgb(157, 91, 53)",
+          "opacity": "1",
+          "focusFill": "#EFE0C8",
+          "regionPri": "精读",
+          "sameRegion": true
+        },
+        {
+          "bg": "rgb(239, 224, 200)",
+          "color": "rgb(46, 42, 32)",
+          "borderLeftColor": "rgb(157, 91, 53)",
+          "opacity": "1",
+          "focusFill": "#EFE0C8",
+          "regionPri": "精读",
+          "sameRegion": true
+        }
+      ]
+    },
+    "states": {
+      "unfocused": true,
+      "highlightNoSelection": true,
+      "highlightSelected": {
+        "active": 1,
+        "focusActive": true,
+        "bgs": [
+          "rgba(0, 0, 0, 0)",
+          "rgba(0, 0, 0, 0)"
+        ]
+      },
+      "afterRestore": true,
+      "afterModes": "rgb(255, 242, 233)"
+    }
+  }
+}

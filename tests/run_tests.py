@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-run_tests.py — Reading Accessibility Skill V2.3.2 测试（零依赖）
+run_tests.py — Reading Accessibility Skill V3.2.4 测试（零依赖）
 覆盖：触发、frontmatter、Agent语义分析schema、语义块切分、保守模式、
       诊断不阻断、HTML视觉分层、聚焦减淡(颜色变量)、速览可见、跳读预览、
       原文完整性、保真、中英混排、三模式差异、Merriam-Webster误判防护、回归。
@@ -86,13 +86,13 @@ test("SKILL.md 声明Agent做语义分析", "第一步语义分析由你（模�
 test("SKILL.md 禁止关键词代替", "不得用关键词规则或脚本代替" in SKILL_MD, "有禁止", "已检查")
 
 # ========== 4. routing.md V2.3 ==========
-test("路由含V2.3", "V2.3" in ROUTING, "有", "已检查")
+test("路由含V3.2.4", "V3.2.4" in ROUTING, "有", "已检查")
 test("路由三层分工", "Agent" in ROUTING and "Python" in ROUTING and "HTML" in ROUTING, "三层", "已检查")
 test("路由Agent schema", "para_idx" in ROUTING and "priority" in ROUTING, "有schema", "已检查")
 test("路由三硬约束", "精确定位" in ROUTING and "不重叠" in ROUTING and "无遗漏" in ROUTING, "三约束", "已检查")
 test("路由保守模式", "保守模式" in ROUTING and "不贴标签" in ROUTING, "有保守", "已检查")
 test("路由语义块非逐句", "语义块" in ROUTING and "非逐句" in ROUTING, "有", "已检查")
-test("路由60%诊断不阻断", "诊断" in ROUTING and "不阻断" in ROUTING, "有", "已检查")
+test("路由60%强制复核", "60%" in ROUTING and "blocked_pending_agent_review" in ROUTING, "复核", "已检查")
 test("路由精读速览跳读", all(t in ROUTING for t in ["精读","速览","跳读"]), "三行为", "已检查")
 test("路由去标签视觉分层", "无标签" in ROUTING or "去标签" in ROUTING, "有", "已检查")
 test("路由减淡用颜色变量", "颜色变量" in ROUTING or "--fg-dim" in ROUTING, "有", "已检查")
@@ -323,9 +323,85 @@ test("HTML·跨行高亮连续", 'box-decoration-break:clone' in html, "有", "o
 test("HTML·原文清除全部辅助视觉", '#original-full .original-block' in html and 'font-weight:400' in html and 'box-shadow:none' in html, "有", "ok")
 test("HTML·强调安全文本节点", 'appendEmphasized' in html and 'createTextNode' in html, "有", "ok")
 
+# ========== 20. V3.2.4 块级统计、复核与标题 ==========
+stats_text = "文档标题\n\n甲乙丙丁。\n\n戊己庚辛壬癸。"
+stats_analysis = {"goal":"聚焦阅读","blocks":[
+    {"para_idx":0,"text":"文档标题","role":"标题","heading_level":0,"priority":"精读","preview":None},
+    {"para_idx":1,"text":"甲乙丙丁。","role":"核心论点","priority":"精读","preview":None},
+    {"para_idx":2,"text":"戊己庚辛壬癸。","role":"背景","priority":"速览","preview":None}
+]}
+r_stats = analyzer.route_text(stats_text, analysis=stats_analysis)
+d_stats = r_stats['_meta']['diagnostic']
+stat_blocks = r_stats['segments'][0]['blocks']
+test("V3.2.4·标题priority强制置空", stat_blocks[0]['priority'] is None and stat_blocks[0]['heading_level']==0, "None/0", str(stat_blocks[0]))
+test("V3.2.4·块级精读字符占比准确", d_stats['focus_char_ratio']==round(5/12,5), str(round(5/12,5)), str(d_stats['focus_char_ratio']))
+test("V3.2.4·块级精读数量占比准确", d_stats['focus_block_ratio']==0.5, "0.5", str(d_stats['focus_block_ratio']))
+test("V3.2.4·结构性块不进分母", d_stats['content_block_count']==2 and d_stats['structural_block_count']==1, "2/1", str([d_stats['content_block_count'],d_stats['structural_block_count']]))
+test("V3.2.4·块长度分布输出", len(d_stats['block_lengths'])==3 and all('char_count' in x and 'sentence_count' in x and 'structural' in x for x in d_stats['block_lengths']), "3块", str(d_stats['block_lengths']))
+test("V3.2.4·旧段级口径仅兼容", d_stats['focus_ratio_basis']=='block_priority_char_nonws; structural_roles_excluded' and 'focus_ratio' in d_stats, "有", "ok")
+
+over_text = "焦点句子甲。\n\n焦点句子乙。\n\n焦点句子丙。"
+def over_analysis(**extra):
+    return dict({"goal":"聚焦阅读","blocks":[
+        {"para_idx":0,"text":"焦点句子甲。","role":"核心论点","priority":"精读","preview":None},
+        {"para_idx":1,"text":"焦点句子乙。","role":"必要推理","priority":"精读","preview":None},
+        {"para_idx":2,"text":"焦点句子丙。","role":"关键证据","priority":"精读","preview":None}
+    ]}, **extra)
+r_over = analyzer.route_text(over_text, analysis=over_analysis())
+d_over = r_over['_meta']['diagnostic']
+test("V3.2.4·默认60%触发复核", d_over['focus_char_ratio']==1.0 and d_over['threshold']==0.60 and d_over['focus_char_exceeded'], "触发", str([d_over['focus_char_ratio'],d_over['threshold']]))
+test("V3.2.4·未复核不得伪装合格", r_over['requires_review'] is True and r_over['output_status']=='blocked_pending_agent_review' and d_over['review']['states']['focus']['status']=='required_not_performed', "阻塞", str(d_over['review']))
+r_review = analyzer.route_text(over_text, analysis=over_analysis(review={"performed":True,"attempt":1,"summary":"复核了三个必要推理块"}))
+test("V3.2.4·复核后无例外仍阻塞", r_review['_meta']['diagnostic']['review']['states']['focus']['status']=='exception_missing', "exception_missing", str(r_review['_meta']['diagnostic']['review']))
+r_exception = analyzer.route_text(over_text, analysis=over_analysis(review={"performed":True,"attempt":1,"summary":"复核了三个必要推理块","exception_reason":"三块分别是定义、必要推理和关键证据，不能降级"}))
+test("V3.2.4·可保留有依据例外", r_exception['_meta']['diagnostic']['review']['states']['focus']['status']=='exception_retained' and r_exception['output_status']=='ready', "保留", str(r_exception['_meta']['diagnostic']['review']))
+r_bad_attempt = analyzer.route_text(over_text, analysis=over_analysis(review={"performed":True,"attempt":3,"summary":"超过两次"}))
+test("V3.2.4·最多两次复核", r_bad_attempt['_meta']['diagnostic']['review']['states']['focus']['status']=='required_not_performed', "拒绝", str(r_bad_attempt['_meta']['diagnostic']['review']))
+r_cfg = analyzer.route_text(over_text, analysis=over_analysis(focus_threshold=1.0))
+test("V3.2.4·阈值可配置且不自动放宽", r_cfg['_meta']['diagnostic']['threshold']==1.0 and r_cfg['output_status']=='ready', "1.0", str(r_cfg['output_status']))
+
+long_body = "这一句构成足够长的正文内容。" * 90
+long_text = long_body
+long_analysis = {"goal":"聚焦阅读","blocks":[{"para_idx":0,"text":long_body,"role":"背景","priority":"速览","preview":None}]}
+r_skip_required = analyzer.route_text(long_text, analysis=long_analysis)
+test("V3.2.4·长文零跳读触发适用性复核", r_skip_required['_meta']['diagnostic']['review']['states']['skip']['status']=='required_not_performed' and r_skip_required['_meta']['diagnostic']['skip_block_count']==0, "触发", str(r_skip_required['_meta']['diagnostic']['review']))
+r_skip_zero_ok = analyzer.route_text(long_text, analysis=dict(long_analysis, skip_review={"performed":True,"attempt":1,"summary":"逐块检查例证与论证关系","exception_reason":"全部背景都是理解论证的必要条件，没有可独立略读内容"}))
+test("V3.2.4·零跳读可记录合理例外", r_skip_zero_ok['_meta']['diagnostic']['review']['states']['skip']['status']=='zero_skip_retained' and r_skip_zero_ok['_meta']['diagnostic']['skip_block_count']==0, "0", str(r_skip_zero_ok['_meta']['diagnostic']['review']))
+necessary_text = "核心定义是甲。\n\n必要推理是乙。"
+necessary_analysis = {"goal":"聚焦阅读","blocks":[
+    {"para_idx":0,"text":"核心定义是甲。","role":"理论定义","priority":"精读","preview":None},
+    {"para_idx":1,"text":"必要推理是乙。","role":"必要推理","priority":"精读","preview":None}
+]}
+r_necessary = analyzer.route_text(necessary_text, analysis=necessary_analysis)
+test("V3.2.4·短文零跳读不误判", r_necessary['_meta']['diagnostic']['review']['states']['skip']['status']=='not_required' and r_necessary['_meta']['diagnostic']['skip_block_count']==0, "不触发", str(r_necessary['_meta']['diagnostic']['review']))
+
+conservative_heading = analyzer.route_text("第一章 总论\n\n这是正文。\n\n他说：“第117回只是引文，不是标题。”")
+ch0 = conservative_heading['segments'][0]['blocks'][0]
+ch2 = conservative_heading['segments'][2]['blocks'][0]
+test("V3.2.4·保守识别独立章节标题", ch0['role']=='标题' and ch0['priority'] is None and ch0['heading_level']==2, "标题", str(ch0))
+test("V3.2.4·保守模式不误判书名引文", ch2['role'] is None and ch2['heading_level'] is None, "正文", str(ch2))
+
+COLOR_TEXT = read(os.path.join(HERE,'color_case_text_v324.txt'))
+COLOR_ANALYSIS = json.loads(read(os.path.join(HERE,'color_case_analysis_v324.json')))
+r_color = analyzer.route_text(COLOR_TEXT, analysis=COLOR_ANALYSIS)
+d_color = r_color['_meta']['diagnostic']
+color_heading = r_color['segments'][0]['blocks'][0]
+color_body = [b for s in r_color['segments'] for b in s['blocks'] if not d_color['block_lengths'][0]['structural'] or b is not color_heading]
+test("V3.2.4·色差用例锚点均在原文", "为了说明表述能够指向对象" in COLOR_TEXT and "胡塞尔的分析并没有彻底解决这些问题" in COLOR_TEXT, "有", "ok")
+test("V3.2.4·色差用例标题不参与比例", color_heading['priority'] is None and d_color['structural_block_count']>=1, "排除", str([color_heading['priority'],d_color['structural_block_count']]))
+color_data = builder.build_data_from_text(COLOR_TEXT, title="色差定位用例", analysis=COLOR_ANALYSIS)
+color_html = builder.inject(HTML_TPL, color_data)
+test("V3.2.4·一级章节渲染h2逻辑", "level===1?'h2'" in html and "el.dataset.headingLevel=level" in html, "h2逻辑", "ok")
+doc_title_analysis = {"goal":"聚焦阅读","blocks":[{"para_idx":0,"text":"文档主标题","role":"标题","heading_level":0,"priority":"精读","preview":None},{"para_idx":1,"text":"正文。","role":"核心论点","priority":"精读","preview":None}]}
+doc_title_html = builder.inject(HTML_TPL, builder.build_data_from_text("文档主标题\n\n正文。", analysis=doc_title_analysis))
+test("V3.2.4·文档主标题渲染h1逻辑", "level===0?'h1'" in html, "h1逻辑", "ok")
+test("V3.2.4·标题不走region视觉区", "if(isHeading(entries[i])){root.appendChild(makeHeading(entries[i]))" in html and not any(x in color_html for x in ['h2 class="heading" data-pri','h1 class="heading" data-pri']), "无策略样式", "ok")
+test("V3.2.4·原文视图可逐句聚焦", 'appendOriginalSentences' in html and "state.view!=='original'" not in html and "e.key==='Escape'" in html, "支持", "ok")
+test("V3.2.4·空白/Esc取消聚焦入口存在", "root.addEventListener('click'" in html and "clearFocus()" in html and "[data-control]" in html, "有", "ok")
+
 # ========== 输出 ==========
 print("="*60)
-print("Reading Accessibility Skill V2.3.2 测试报告")
+print("Reading Accessibility Skill V3.2.4 测试报告")
 print("="*60)
 for name,status,exp,act in RESULTS:
     print(f"[{status}] {name}")

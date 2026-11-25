@@ -46,6 +46,12 @@
   .region[data-pri="速览"]{border-left:2px solid var(--skim-border)}
   .region[data-pri="跳读"]{border-left-color:var(--skip-border)}
   .block{margin:0;padding:10px 12px;color:var(--fg);font-size:var(--reader-font-size);line-height:var(--reader-line-height);overflow-wrap:anywhere;transition:color .15s,background-color .15s}
+  .block.structural{background:transparent;border:0;padding:6px 0;color:var(--fg)}
+  .heading{margin:18px 0 10px;padding:0;border:0;background:transparent;color:var(--fg);font-weight:700;line-height:1.4}
+  h1.heading{font-size:calc(var(--reader-font-size)*1.4);margin-top:8px}
+  h2.heading{font-size:calc(var(--reader-font-size)*1.3);margin-top:18px}
+  h3.heading{font-size:calc(var(--reader-font-size)*1.15);margin-top:16px}
+  h4.heading,h5.heading,h6.heading{font-size:calc(var(--reader-font-size)*1.08);margin-top:14px}
   .block.para-start{margin-top:10px}
   .region>.block:first-child{margin-top:0;border-top-left-radius:3px}
   .region>.block:last-child{border-bottom-left-radius:3px}
@@ -59,7 +65,7 @@
   .sent.hl-on{cursor:pointer}
   .sent.hl-on:hover:not(.active){background:var(--control-bg)}
   .sent.active,.sent.hl-on.active{background:var(--hl-bg);box-shadow:inset 2px 0 0 var(--hl-border);-webkit-box-decoration-break:clone;box-decoration-break:clone}
-  .block.dimmed{color:var(--fg-dim)}
+  .block.dimmed,.original-block.dimmed{color:var(--fg-dim)}
   .block.dimmed strong{color:inherit}
   /* 聚焦期间静态块级填充让位；边框和局部加粗仍保留。 */
   body.focus-active .region[data-pri] .block{background:transparent}
@@ -101,7 +107,7 @@
   <span><button id="prev">← 上一句</button> <button id="next">下一句 →</button></span>
 </footer>
 <script>
-const DATA={"title": "阅读辅助", "mode": "聚焦阅读", "high_risk": false, "modules": [{"title": "理论定义", "content": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，…"}, {"title": "方法论", "content": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法…"}, {"title": "概念定义", "content": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。"}, {"title": "例证", "content": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："}, {"title": "引文", "content": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）"}, {"title": "局限", "content": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"}], "segments": [{"seg_no": 1, "priority": "精读", "role": "理论定义", "reason": null, "preview": null, "original": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "blocks": [{"text": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "role": "理论定义", "priority": "精读", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "preview": null, "emphasis": [{"start": 21, "end": 30, "text": "语义翻译和交际翻译", "score": 0.98}, {"start": 98, "end": 108, "text": "尽可能将二者结合起来", "score": 0.92}]}], "foldable": false}, {"seg_no": 2, "priority": "精读", "role": "方法论", "reason": null, "preview": null, "original": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "blocks": [{"text": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "role": "方法论", "priority": "精读", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "preview": null, "emphasis": []}], "foldable": false}, {"seg_no": 3, "priority": "精读", "role": "概念定义", "reason": null, "preview": null, "original": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "blocks": [{"text": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "role": "概念定义", "priority": "精读", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。"], "preview": null, "emphasis": []}, {"text": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "role": "例证", "priority": "速览", "sentences": ["例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "preview": null, "emphasis": []}], "foldable": false}, {"seg_no": 4, "priority": "跳读", "role": "引文", "reason": null, "preview": "《红楼梦》第117回原文引文", "original": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。", "（第117回）"], "blocks": [{"text": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "role": "引文", "priority": "跳读", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。", "（第117回）"], "preview": "《红楼梦》第117回原文引文", "emphasis": []}], "foldable": true}, {"seg_no": 5, "priority": "跳读", "role": "引文", "reason": null, "preview": "霍克思英译原文", "original": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "blocks": [{"text": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "role": "引文", "priority": "跳读", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "preview": "霍克思英译原文", "emphasis": []}], "foldable": true}, {"seg_no": 6, "priority": "精读", "role": "局限", "reason": null, "preview": null, "original": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "blocks": [{"text": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "role": "局限", "priority": "精读", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "preview": null, "emphasis": []}], "foldable": false}], "original_text": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。\n\n基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。\n\n借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：\n\n他何尝是真要银子呢，也只当化个善缘就是了。（第117回）\n\n霍译：At the most he was hoping for a friendly contribution, which would create good karma．\n\n这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "conservative": false};
+const DATA={"title": "阅读辅助", "mode": "聚焦阅读", "high_risk": false, "modules": [{"title": "理论定义", "content": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，…"}, {"title": "方法论", "content": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法…"}, {"title": "概念定义", "content": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。"}, {"title": "例证", "content": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："}, {"title": "引文", "content": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）"}, {"title": "局限", "content": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"}], "segments": [{"seg_no": 1, "priority": "精读", "role": "理论定义", "reason": null, "preview": null, "original": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "blocks": [{"text": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。", "role": "理论定义", "structure": null, "heading_level": null, "priority": "精读", "sentences": ["根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。", "从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。", "而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。"], "preview": null, "emphasis": [{"start": 21, "end": 30, "text": "语义翻译和交际翻译", "score": 0.98}, {"start": 98, "end": 108, "text": "尽可能将二者结合起来", "score": 0.92}]}], "foldable": false}, {"seg_no": 2, "priority": "精读", "role": "方法论", "reason": null, "preview": null, "original": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "blocks": [{"text": "基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。", "role": "方法论", "structure": null, "heading_level": null, "priority": "精读", "sentences": ["基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。"], "preview": null, "emphasis": []}], "foldable": false}, {"seg_no": 3, "priority": "精读", "role": "概念定义", "reason": null, "preview": null, "original": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "blocks": [{"text": "借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。", "role": "概念定义", "structure": null, "heading_level": null, "priority": "精读", "sentences": ["借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。"], "preview": null, "emphasis": []}, {"text": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：", "role": "例证", "structure": null, "heading_level": null, "priority": "速览", "sentences": ["例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"："], "preview": null, "emphasis": []}], "foldable": false}, {"seg_no": 4, "priority": "跳读", "role": "引文", "reason": null, "preview": "《红楼梦》第117回原文引文", "original": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。", "（第117回）"], "blocks": [{"text": "他何尝是真要银子呢，也只当化个善缘就是了。（第117回）", "role": "引文", "structure": null, "heading_level": null, "priority": "跳读", "sentences": ["他何尝是真要银子呢，也只当化个善缘就是了。", "（第117回）"], "preview": "《红楼梦》第117回原文引文", "emphasis": []}], "foldable": true}, {"seg_no": 5, "priority": "跳读", "role": "引文", "reason": null, "preview": "霍克思英译原文", "original": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "blocks": [{"text": "霍译：At the most he was hoping for a friendly contribution, which would create good karma．", "role": "引文", "structure": null, "heading_level": null, "priority": "跳读", "sentences": ["霍译：At the most he was hoping for a friendly contribution, which would create good karma．"], "preview": "霍克思英译原文", "emphasis": []}], "foldable": true}, {"seg_no": 6, "priority": "精读", "role": "局限", "reason": null, "preview": null, "original": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "blocks": [{"text": "这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "role": "局限", "structure": null, "heading_level": null, "priority": "精读", "sentences": ["这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。"], "preview": null, "emphasis": []}], "foldable": false}], "original_text": "根据纽马克的翻译理论，英汉翻译主要可以采取语义翻译和交际翻译两种侧重形式。从理论上讲，语义翻译倾向于保留原文文化的表达，而交际翻译更关注将含有文化色彩的概念转化为本民族的表达方式。而好的翻译，则应尽可能将二者结合起来，以平衡本民族与其他民族的文化差异。\n\n基于这种翻译理论，针对\"缘分\"为代表的文化负载词在英语中的词义空缺现象，译者可以采取借词、替代和释义这三种相对适用的方法来进行填补。\n\n借词是通过引用其他语言中的单词从而创造出本语言中新词的方法。例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：\n\n他何尝是真要银子呢，也只当化个善缘就是了。（第117回）\n\n霍译：At the most he was hoping for a friendly contribution, which would create good karma．\n\n这种翻译方法虽解决了英语中的词义空缺，但其弊端也比较明显：读者必须理解源于第三者文化中的新词，这仍然需要花费相当的精力。", "conservative": false, "requires_review": false, "output_status": "ready"};
 const root=document.getElementById('root');
 const LS_KEY='reading-accessibility-v232';
 let state=Object.assign({fs:'18',lh:'1.7',th:'light',mode:DATA.mode||'聚焦阅读',hl:false,view:'assisted',cur:-1,allExpanded:false},loadLS());
@@ -119,7 +125,7 @@ function applySettings(){
   document.documentElement.setAttribute('data-theme',state.th);
   document.getElementById('fs').value=state.fs;document.getElementById('lh').value=state.lh;document.getElementById('th').value=state.th;
   document.getElementById('modeBtn').textContent='模式：'+state.mode.replace('阅读','');
-  const hb=document.getElementById('hlBtn');hb.textContent='高亮：'+(state.hl?'开':'关');hb.classList.toggle('on',state.hl);hb.disabled=state.view==='original';
+  const hb=document.getElementById('hlBtn');hb.textContent='高亮：'+(state.hl?'开':'关');hb.classList.toggle('on',state.hl);
   document.getElementById('origAll').textContent=state.view==='assisted'?'查看原文':'返回辅助';
   syncExpandAll();
 }
@@ -129,7 +135,7 @@ function syncExpandAll(){
 }
 function visible(el){return !!(el&&el.getClientRects().length&&!el.closest('details:not([open])'))}
 function capturePosition(){
-  const candidates=Array.from(document.querySelectorAll('.block,.original-block')).filter(visible);
+  const candidates=Array.from(document.querySelectorAll('.block,.heading,.original-block')).filter(visible);
   if(!candidates.length)return null;
   const line=(document.querySelector('header')||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom+8;
   let el=candidates.find(x=>x.getBoundingClientRect().bottom>line)||candidates[candidates.length-1];
@@ -186,15 +192,38 @@ function renderOriginal(){
   entries.forEach(e=>{
     const text=e.block.text||'';let at=originalText.indexOf(text,cursor);if(at<0)at=originalText.indexOf(text);if(at<0)return;
     if(at>cursor)container.appendChild(document.createTextNode(originalText.slice(cursor,at)));
-    const span=document.createElement('span');span.className='original-block';span.dataset.blockId=e.id;span.textContent=text;container.appendChild(span);cursor=at+text.length;
+    const span=document.createElement('span');span.className='original-block';span.dataset.blockId=e.id;span.dataset.seg=e.segNo;
+    appendOriginalSentences(span,text,e);container.appendChild(span);cursor=at+text.length;
   });
   if(cursor<originalText.length)container.appendChild(document.createTextNode(originalText.slice(cursor)));
   root.appendChild(container);
 }
-function structuralBoundary(entry){return ['标题','列表','引文','原文译文对照','对照','表格','分隔线'].includes(entry.block.structure||entry.block.role)}
+function appendOriginalSentences(parent,text,entry){
+  const sentences=entry.block.sentences||[text];let cursor=0,wrote=false;
+  sentences.forEach((sentence,si)=>{
+    let at=text.indexOf(sentence,cursor);if(at<0)at=text.indexOf(sentence);if(at<0)return;
+    if(at>cursor)parent.appendChild(document.createTextNode(text.slice(cursor,at)));
+    const sp=document.createElement('span');sp.className='sent'+(state.hl?' hl-on':'');sp.textContent=sentence;sp.dataset.sentKey=entry.id+':o'+si;
+    const record={el:sp,segNo:entry.segNo,blockEl:parent,entry,key:sp.dataset.sentKey};sents.push(record);
+    sp.addEventListener('click',ev=>{ev.stopPropagation();if(state.hl)focusAt(sents.findIndex(x=>x.el===sp))});
+    parent.appendChild(sp);wrote=true;cursor=at+sentence.length;
+  });
+  if(cursor<text.length)parent.appendChild(document.createTextNode(text.slice(cursor)));
+  return wrote;
+}
+function isHeading(entry){return (entry.block.role==='标题'||entry.block.role==='章节标题'||entry.block.heading_level!=null)&&entry.block.heading_level!=null}
+function makeHeading(entry){
+  const level=Math.max(0,Math.min(6,entry.block.heading_level));
+  const tag=level===0?'h1':level===1?'h2':level===2?'h3':'h'+Math.min(6,level+1);
+  const el=document.createElement(tag);el.className='heading';el.dataset.blockId=entry.id;el.dataset.seg=entry.segNo;el.dataset.headingLevel=level;el.textContent=entry.block.text||'';
+  return el;
+}
+function structuralBoundary(entry){return ['标题','章节标题','列表','引文','原文译文对照','对照','表格','分隔符','分隔线'].includes(entry.block.structure||entry.block.role)}
 function renderAssisted(){
   let i=0;
   while(i<entries.length){
+    if(isHeading(entries[i])){root.appendChild(makeHeading(entries[i]));i++;continue}
+    if(structuralBoundary(entries[i])&&!(entries[i].block.priority||'速览')){const el=document.createElement('div');el.className='block structural';el.dataset.pri='';el.dataset.blockId=entries[i].id;el.dataset.seg=entries[i].segNo;el.textContent=entries[i].block.text||'';root.appendChild(el);i++;continue}
     const pri=entries[i].block.priority||'速览';const folded=pri==='跳读'&&state.mode!=='完整阅读';let j=i+1;
     if(folded){while(j<entries.length&&(entries[j].block.priority||'速览')==='跳读'&&entries[j].block.role===entries[i].block.role)j++;root.appendChild(makeSkipGroup(entries.slice(i,j)))}
     else{if(!structuralBoundary(entries[i]))while(j<entries.length&&(entries[j].block.priority||'速览')===pri&&!structuralBoundary(entries[j]))j++;const region=document.createElement('section');region.className='region';region.dataset.pri=pri;entries.slice(i,j).forEach(e=>region.appendChild(makeBlock(e)));root.appendChild(region)}
@@ -205,18 +234,18 @@ function render(){
   const pos=capturePosition(),focusKey=state.cur>=0&&sents[state.cur]?sents[state.cur].key:null;
   root.innerHTML='';sents=[];
   if(state.view==='original')renderOriginal();else renderAssisted();
-  state.cur=focusKey&&state.view!=='original'?sents.findIndex(x=>x.key===focusKey&&visible(x.el)):-1;
+  state.cur=focusKey?sents.findIndex(x=>x.key===focusKey&&visible(x.el)):-1;
   applyFocus();updatePos();applySettings();restorePosition(pos);
 }
 function applyFocus(){
-  document.querySelectorAll('.block').forEach(b=>b.classList.remove('dimmed'));document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));
-  const active=state.hl&&state.view!=='original'&&state.cur>=0&&sents[state.cur]&&visible(sents[state.cur].el);
+  document.querySelectorAll('.block,.original-block').forEach(b=>b.classList.remove('dimmed'));document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));
+  const active=state.hl&&state.cur>=0&&sents[state.cur]&&visible(sents[state.cur].el);
   document.body.classList.toggle('focus-active',!!active);
-  if(active){const current=sents[state.cur];current.el.classList.add('active');document.querySelectorAll('.block').forEach(b=>{if(b!==current.blockEl)b.classList.add('dimmed')})}
+  if(active){const current=sents[state.cur];current.el.classList.add('active');document.querySelectorAll('.block,.original-block').forEach(b=>{if(b!==current.blockEl)b.classList.add('dimmed')})}
 }
 function clearFocus(){state.cur=-1;applyFocus();updatePos();saveLS()}
 function focusAt(i){
-  if(!state.hl||state.view==='original'||i<0||i>=sents.length||!visible(sents[i].el))return;
+  if(!state.hl||i<0||i>=sents.length||!visible(sents[i].el))return;
   state.cur=i;sents[i].el.scrollIntoView({block:'center',behavior:'smooth'});applyFocus();updatePos();saveLS();
 }
 function updatePos(){
@@ -225,7 +254,15 @@ function updatePos(){
 }
 function moveFocus(step){for(let i=state.cur+step;i>=0&&i<sents.length;i+=step){if(visible(sents[i].el)){focusAt(i);return}}}
 document.getElementById('next').addEventListener('click',()=>moveFocus(1));document.getElementById('prev').addEventListener('click',()=>moveFocus(-1));
-document.addEventListener('keydown',e=>{if(e.target.tagName==='SELECT')return;if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click()});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='SELECT')return;if(e.key==='Escape'){if(state.cur>=0)clearFocus();return}if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click()});
+document.querySelectorAll('header button,header select,footer button').forEach(el=>el.setAttribute('data-control','true'));
+root.addEventListener('click',ev=>{
+  if(ev.target!==root)return;
+  if(ev.target.closest('.sentence,.sent,details,[data-control]'))return;
+  const selection=window.getSelection?String(window.getSelection()):'';
+  if(selection)return;
+  if(state.hl&&state.cur>=0)clearFocus();
+});
 document.getElementById('fs').addEventListener('change',e=>{state.fs=e.target.value;applySettings();saveLS()});
 document.getElementById('lh').addEventListener('change',e=>{state.lh=e.target.value;applySettings();saveLS()});
 document.getElementById('th').addEventListener('change',e=>{state.th=e.target.value;applySettings();saveLS()});
