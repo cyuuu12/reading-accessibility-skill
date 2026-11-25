@@ -1,7 +1,7 @@
 {
   "browser": "Chrome headless (CDP)",
-  "timestamp": "2026-11-25T14:06:59.791Z",
-  "passed": 54,
+  "timestamp": "2026-11-25T14:16:49.435Z",
+  "passed": 59,
   "failed": 0,
   "results": [
     {
@@ -36,6 +36,49 @@
         "bodyColor": "rgb(26, 26, 26)",
         "folds": 1,
         "skipOpen": false,
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipBorder": "dashed",
+        "skipBorderWidth": "2px",
+        "previewColor": "rgb(98, 98, 98)",
+        "preview": "《红楼梦》第117回原文引文",
+        "previewVisible": true,
+        "regions": 3,
+        "blocks": 7,
+        "perSegmentButtons": 0,
+        "originalButtons": 1
+      }
+    },
+    {
+      "name": "跳读无填充且弱于速览",
+      "status": "通过",
+      "detail": {
+        "focusBg": "rgb(255, 242, 233)",
+        "focusBorder": "3px",
+        "focusColor": "rgb(26, 26, 26)",
+        "strong": [
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "语义翻译和交际翻译"
+          },
+          {
+            "weight": "700",
+            "color": "rgb(168, 67, 31)",
+            "text": "尽可能将二者结合起来"
+          }
+        ],
+        "skimColor": "rgb(26, 26, 26)",
+        "skimWeight": "400",
+        "skimBg": "rgba(0, 0, 0, 0)",
+        "skimText": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "skimExpected": "例如，在《红楼梦》英译本中，\"缘分\"的英译借用了早期的佛经语言\"karma\"：",
+        "bodyColor": "rgb(26, 26, 26)",
+        "folds": 1,
+        "skipOpen": false,
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipBorder": "dashed",
+        "skipBorderWidth": "2px",
+        "previewColor": "rgb(98, 98, 98)",
         "preview": "《红楼梦》第117回原文引文",
         "previewVisible": true,
         "regions": 3,
@@ -87,6 +130,10 @@
         "bodyColor": "rgb(26, 26, 26)",
         "folds": 1,
         "skipOpen": false,
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipBorder": "dashed",
+        "skipBorderWidth": "2px",
+        "previewColor": "rgb(98, 98, 98)",
         "preview": "《红楼梦》第117回原文引文",
         "previewVisible": true,
         "regions": 3,
@@ -585,23 +632,71 @@
       }
     },
     {
+      "name": "跳读展开后正文仍无填充",
+      "status": "通过",
+      "detail": [
+        "rgba(0, 0, 0, 0)",
+        "rgba(0, 0, 0, 0)",
+        "rgba(0, 0, 0, 0)"
+      ]
+    },
+    {
+      "name": "light主题跳读仍无填充且预览可读",
+      "status": "通过",
+      "detail": {
+        "fill": "rgb(255, 242, 233)",
+        "page": "rgb(255, 255, 255)",
+        "border": "3px",
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipPreview": "rgb(98, 98, 98)"
+      }
+    },
+    {
+      "name": "dark主题跳读仍无填充且预览可读",
+      "status": "通过",
+      "detail": {
+        "fill": "rgb(58, 42, 30)",
+        "page": "rgb(30, 30, 30)",
+        "border": "3px",
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipPreview": "rgb(170, 170, 170)"
+      }
+    },
+    {
+      "name": "sepia主题跳读仍无填充且预览可读",
+      "status": "通过",
+      "detail": {
+        "fill": "rgb(239, 224, 200)",
+        "page": "rgb(244, 236, 216)",
+        "border": "3px",
+        "skipBg": "rgba(0, 0, 0, 0)",
+        "skipPreview": "rgb(98, 88, 70)"
+      }
+    },
+    {
       "name": "三主题精读均有可辨填充而非只剩边框",
       "status": "通过",
       "detail": {
         "light": {
           "fill": "rgb(255, 242, 233)",
           "page": "rgb(255, 255, 255)",
-          "border": "3px"
+          "border": "3px",
+          "skipBg": "rgba(0, 0, 0, 0)",
+          "skipPreview": "rgb(98, 98, 98)"
         },
         "dark": {
           "fill": "rgb(58, 42, 30)",
           "page": "rgb(30, 30, 30)",
-          "border": "3px"
+          "border": "3px",
+          "skipBg": "rgba(0, 0, 0, 0)",
+          "skipPreview": "rgb(170, 170, 170)"
         },
         "sepia": {
           "fill": "rgb(239, 224, 200)",
           "page": "rgb(244, 236, 216)",
-          "border": "3px"
+          "border": "3px",
+          "skipBg": "rgba(0, 0, 0, 0)",
+          "skipPreview": "rgb(98, 88, 70)"
         }
       }
     },
