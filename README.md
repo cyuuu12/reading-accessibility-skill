@@ -50,16 +50,8 @@ reading_accessibility/
 ├── assets/       attention_map_template.md · focus_version_template.md · reader_template.html
 ├── scripts/      acs.py · analyze.py · fidelity_check.py · build_reader.py · build_markdown.py
 └── tests/
-    ├── run_tests.py                    # 零依赖静态/数据测试
-    ├── browser_test.mjs                # Node + Chrome CDP 真实交互测试
-    ├── analysis_v23.json               # 缘分文本 Agent 分析与复核例外示例
-    ├── color_case_text_v324.txt        # 色差区间受控 fixture
-    ├── color_case_analysis_v324.json
-    ├── color_case_reader_v324.html
-    ├── block_stats_v324.json           # 可用文本块构成与长度分布
-    ├── V325_FIX_REPORT.md               # 本次五项修复报告
-    ├── demo_reader_v232.html            # 演示阅读器
-    └── browser_artifacts/              # 浏览器结果、样式记录、截图、fixtures
+    ├── run_tests.py                    # 单元与静态验收；用例运行时构造
+    └── browser_test.mjs                # 浏览器交互验收；产物仅写系统临时目录
 ```
 
 ## 使用
@@ -79,7 +71,7 @@ node tests/browser_test.mjs   # 需本机 Chrome/Edge；可用 CHROME_PATH 指�
 
 ## 验证与开发路径
 
-V4.0 验收结果见 `tests/V400_FIX_REPORT.md`。日常阅读不自动运行测试；只有用户明确要求开发验收时才执行完整静态测试、浏览器交互和截图。Markdown 是正式轻量输出，HTML 是交互输出，两者共用一次分析数据。
+测试报告、演示阅读器、截图及 JSON/TXT 测试样本仅在本地生成，不纳入版本库。日常阅读不自动运行测试；只有用户明确要求开发验收时才执行完整静态测试、浏览器交互和截图。Markdown 是正式轻量输出，HTML 是交互输出，两者共用一次分析数据。
 
 ## 边界
 

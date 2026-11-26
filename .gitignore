@@ -5,3 +5,12 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+# 测试生成数据、演示页、截图、历史报告均不提交。
+/tests/*
+!/tests/run_tests.py
+!/tests/browser_test.mjs
+/scripts/sample_*.txt
+/skill-test/
+/test-output/
+/*.test.html
+/*.test.json

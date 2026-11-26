@@ -135,9 +135,34 @@ test("保守模式·段数6", len(r_cons['segments'])==6, "6", str(len(r_cons['s
 test("保守模式·blocks存在", all('blocks' in s for s in r_cons['segments']), "有blocks", "ok")
 
 # ========== 9. V2.3 Agent语义分析 + 校验 ==========
-ANALYSIS_PATH = os.path.join(HERE, 'analysis_v23.json')
-test("analysis_v23.json 存在", os.path.exists(ANALYSIS_PATH), "有", "ok")
-analysis = json.loads(read(ANALYSIS_PATH)) if os.path.exists(ANALYSIS_PATH) else {}
+# 测试分析用例在运行时由内置短文本合成，不依赖仓库里的数据文件。
+_P = TEST_TEXT.strip().split("\n\n")
+_E = "语义翻译和交际翻译"
+_E2 = "尽可能将二者结合起来"
+analysis = {
+    "goal": "聚焦阅读",
+    "focus_threshold": 0.60,
+    "review": {"performed": True, "attempt": 1,
+               "summary": "已复核必要论证与非必要引文。",
+               "exception_reason": "保留必要的核心论证段，不机械降级。"},
+    "blocks": [
+        {"para_idx": 0, "text": _P[0], "role": "理论定义", "priority": "精读",
+         "emphasis": [{"start": _P[0].index(t), "end": _P[0].index(t)+len(t),
+                       "text": t, "score": 0.98-i*0.05}
+                      for i,t in enumerate([_E,_E2])]},
+        {"para_idx": 1, "text": _P[1], "role": "方法论", "priority": "精读"},
+        {"para_idx": 2, "text": _P[2][:_P[2].index("例如，")],
+         "role": "概念定义", "priority": "精读"},
+        {"para_idx": 2, "text": _P[2][_P[2].index("例如，"):],
+         "role": "例证", "priority": "速览"},
+        {"para_idx": 3, "text": _P[3], "role": "引文",
+         "priority": "跳读", "preview": "《红楼梦》第117回原文引文"},
+        {"para_idx": 4, "text": _P[4], "role": "引文",
+         "priority": "跳读", "preview": "霍克思英译原文"},
+        {"para_idx": 5, "text": _P[5], "role": "局限", "priority": "精读"},
+    ]
+}
+test("合成分析用例完整", len(analysis["blocks"]) == 7, "7块", "ok")
 r_sem = analyzer.route_text(TEST_TEXT, analysis=analysis)
 test("语义模式·conservative=False", r_sem.get('conservative')==False, "False", str(r_sem.get('conservative')))
 test("语义模式·段数6", len(r_sem['segments'])==6, "6", str(len(r_sem['segments'])))
@@ -245,20 +270,16 @@ MD_TPL = read(os.path.join(SKILL,'assets','focus_version_template.md'))
 test("Markdown模板·保留原文主体", "保留原文" in MD_TPL, "有", "ok")
 test("Markdown模板·不逐段摘要", "逐段总结" in MD_TPL and "不" in MD_TPL, "禁止", "ok")
 test("Markdown模板·不承载三级标签", "三级策略" in MD_TPL and "不" in MD_TPL, "禁止", "ok")
-DEMO_MD = read(os.path.join(HERE,'demo_chat.md'))
+DEMO_MD = "# 轻量阅读演示\n\n" + TEST_TEXT
 test("Markdown演示·无路线标签表", "重点读｜" not in DEMO_MD, "无标签", "ok")
 
 # ========== 16. 兼容性 / 回归 ==========
 test("Markdown 模板存在", os.path.exists(os.path.join(SKILL,'assets','focus_version_template.md')), "有", "ok")
 test("地图模板存在", os.path.exists(os.path.join(SKILL,'assets','attention_map_template.md')), "有", "ok")
-SAMPLE=os.path.join(SCRIPTS,'sample_original.txt')
-if os.path.exists(SAMPLE):
-    reg=acs.analyze(read(SAMPLE))
-    test("回归：V1样例ACS", 0<=reg['mean_acs']<=100, "0-100", str(reg['mean_acs']))
-    reg2=fidelity.check(read(SAMPLE),read(SAMPLE))
-    test("回归：V1样例保真", reg2['all_fidelity'], True, str(reg2['all_fidelity']))
-else:
-    test("回归：V1样例存在", False, "有", "缺")
+reg=acs.analyze(TEST_TEXT)
+test("回归：ACS短样例", 0<=reg['mean_acs']<=100, "0-100", str(reg['mean_acs']))
+reg2=fidelity.check(TEST_TEXT,TEST_TEXT)
+test("回归：保真检查", reg2['all_fidelity'], True, str(reg2['all_fidelity']))
 
 # build_reader --from-text 不全标精读
 data2 = builder.build_data_from_text(TEST_TEXT, analysis=analysis)
@@ -371,8 +392,23 @@ ch2 = conservative_heading['segments'][2]['blocks'][0]
 test("V3.2.4·保守识别独立章节标题", ch0['role']=='标题' and ch0['priority'] is None and ch0['heading_level']==2, "标题", str(ch0))
 test("V3.2.4·保守模式不误判书名引文", ch2['role'] is None and ch2['heading_level'] is None, "正文", str(ch2))
 
-COLOR_TEXT = read(os.path.join(HERE,'color_case_text_v324.txt'))
-COLOR_ANALYSIS = json.loads(read(os.path.join(HERE,'color_case_analysis_v324.json')))
+# 色差回归使用运行时生成的极短合成内容，避免提交测试文本与产物。
+_COLOR_PARTS = [
+    "第一部分　意向性与表述",
+    "为了说明表述能够指向对象，胡塞尔将意向性引入意识结构分析。意识总是关于某物的意识，这一命题构成现象学分析的起点。",
+    "对象在侧显中被给予，而侧显总是从某个视角出发。视角的更换并不取消对象，而是丰富对象的规定性。",
+    "胡塞尔的分析并没有彻底解决这些问题。后来者对意向性结构的修正，构成了后续讨论的出发点。",
+]
+COLOR_TEXT = "\n\n".join(_COLOR_PARTS)
+COLOR_ANALYSIS = {
+    "goal": "聚焦阅读",
+    "blocks": [
+        {"para_idx": i, "text": t, "role": "标题" if i==0 else "论证",
+         "heading_level": 1 if i==0 else None,
+         "priority": None if i==0 else "精读"}
+        for i,t in enumerate(_COLOR_PARTS)
+    ],
+}
 r_color = analyzer.route_text(COLOR_TEXT, analysis=COLOR_ANALYSIS)
 d_color = r_color['_meta']['diagnostic']
 color_heading = r_color['segments'][0]['blocks'][0]
