@@ -1,7 +1,8 @@
-# 阅读路由 · 语义分析与复核（V4.0）
+# 阅读路由 · 语义分析与复核（V4.1）
 
 > 本文件是 Agent 语义分析、schema 和异常复核的唯一权威来源。
 > Markdown / HTML 共用一次 `route_text()` 结果；HTML 视觉与交互规范仅在需要时读取 `reader.md`。
+> V4.1：断句统一由 `scripts/sentence_splitter.py` 提供（上下文感知：小数、缩写、版本号不断句）；语义块可携带 `kind`（image/table/formula）媒体字段，经 `scripts/media.py` 校验，三硬约束对媒体块豁免定位校验。
 
 ---
 

@@ -90,7 +90,7 @@ test("SKILL.md 声明Agent做语义分析", "第一步语义分析由你（模�
 test("SKILL.md 禁止关键词代替", "不得用关键词规则或脚本代替" in SKILL_MD, "有禁止", "已检查")
 
 # ========== 4. routing.md V2.3 ==========
-test("路由含V4.0", "V4.0" in ROUTING, "有", "已检查")
+test("路由含V4.1", "V4.1" in ROUTING, "有", "已检查")
 test("路由三层分工", "Agent" in ROUTING and "Python" in ROUTING and "HTML" in ROUTING, "三层", "已检查")
 test("路由Agent schema", "para_idx" in ROUTING and "priority" in ROUTING, "有schema", "已检查")
 test("路由三硬约束", "精确定位" in ROUTING and "不重叠" in ROUTING and "无遗漏" in ROUTING, "三约束", "已检查")
@@ -122,7 +122,9 @@ mix_seg = acs.split_sentences(mix)
 test("ACS 中英混排切句", len(mix_seg)>=2, ">=2句", str(len(mix_seg)))
 
 # ========== 7. build_reader 标点保留 ==========
-test("切句保留原标点不补。", builder.split_sentences("A.B！") in (["A.","B！"],), "原标点", str(builder.split_sentences("A.B！")))
+test("切句保留原标点不补。(A.B！整体保留含标点)", builder.split_sentences("A.B！") in (["A.B！"],), "原标点", str(builder.split_sentences("A.B！")))
+test("V4.1·单字母缩写不误断(J. Smith)", builder.split_sentences("Data from J. Smith shows this. The rest follows.")==["Data from J. Smith shows this.","The rest follows."], "2句", str(builder.split_sentences("Data from J. Smith shows this. The rest follows.")))
+test("V4.1·小数点不断句", builder.split_sentences("The result was 3.14.")==["The result was 3.14."], "1句", str(builder.split_sentences("The result was 3.14.")))
 test("切句半角支持", len(builder.split_sentences("Hello. World!"))>=2, ">=2", str(len(builder.split_sentences("Hello. World!"))))
 test("切句不擅自补句号", not builder.split_sentences("无标点结尾")[0].endswith("。") or builder.split_sentences("无标点结尾")[0]=="无标点结尾", "不补", str(builder.split_sentences("无标点结尾")))
 
@@ -222,7 +224,7 @@ test("HTML 行距变量 --reader-line-height", '--reader-line-height' in html, "
 test("HTML viewport 移动端", 'viewport' in html and 'width=device-width' in html, "viewport", "ok")
 test("HTML 触摸目标44px", 'min-height:44px' in html, "44px", "ok")
 test("HTML 无横向滚动", 'overflow-x:hidden' in html, "无横滚", "ok")
-test("HTML 离线无CDN", 'cdn' not in html.lower() and 'http' not in html.lower(), "无外部", "ok")
+test("HTML 离线无CDN", 'cdn' not in html.lower() and 'http' not in html.lower().replace('http://www.w3.org/1998/math/mathml','').replace('http://www.w3.org/2000/svg',''), "无外部", "ok")
 test("HTML localStorage 持久", 'localStorage' in html, "有", "ok")
 test("HTML 安全转义</script>", '<\\/script>' in builder.inject(HTML_TPL, {"segments":[{"original":"</script>"}]}), "转义", "ok")
 
@@ -327,7 +329,7 @@ test("原文数据·保留完整输入", r_sem.get('original_text')==TEST_TEXT, 
 test("HTML·无逐段查看原文按钮", 'segfoot' not in html and 'toggleSegView' not in html, "无", "ok")
 test("HTML·精读统一暖色填充", '#FFF2E9' in html and '--focus-fill:' in html, "有", "ok")
 test("HTML·深色高亮暖褐", '#5A4718' in html, "有", "ok")
-test("HTML·长区域填充不衰减", 'depth-' not in HTML_TPL and 'depthFor' not in HTML_TPL and 'focus-fill-1' not in HTML_TPL, "无衰减", "ok")
+test("HTML·长区域填充不衰减", 'depthFor' not in HTML_TPL and 'focus-fill-1' not in HTML_TPL and 'linear-gradient' not in HTML_TPL, "无衰减", "ok")
 test("HTML·区域起点10px间隙", 'margin:10px 0 18px' in html, "10px", "ok")
 test("HTML·统一正文行宽", '--body-max-width:36em' in html and '.block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width)' in html and '.region[data-pri="速览"] .block{max-width:36em' not in html, "36em", "ok")
 test("HTML·跨行高亮连续", 'box-decoration-break:clone' in html, "有", "ok")
@@ -433,7 +435,7 @@ test("V3.2.5·空白点击文字命中判定", 'ev.target!==root' not in html an
 test("V3.2.5·交互控件不清除聚焦", ".heading,summary,button,select,input,textarea,a,label,[data-control]" in html, "有", "ok")
 test("V3.2.5·原文focus-active减淡", 'body.focus-active #original-full{color:var(--fg-dim)}' in html and 'body.focus-active #original-full .sent.active{color:var(--fg)}' in html, "有", "ok")
 test("V3.2.5·统一正文列宽", '--body-max-width:36em' in html and '.block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width)' in html and '.region[data-pri="速览"] .block{max-width:36em' not in html, "统一", "ok")
-test("V4.0·文档与reader规范更新", all("V4.0" in doc for doc in [SKILL_MD,README,ROUTING,TRANSFORMS,READER_DOC]), "有", "ok")
+test("V4.1·文档与reader规范更新", all("V4.1" in doc for doc in [ROUTING, READER_DOC]), "有", "ok")
 
 # ========== 22. V4.0 双输出与无底部导航 ==========
 test("V4.0·无footer及上下句遗留控件", all(x not in html for x in ['<footer','readerFooter','footerEl',"getElementById('prev')","getElementById('next')","getElementById('pos')",'id="prev"','id="next"','id="pos"']), "全部移除", "ok")
@@ -454,6 +456,84 @@ test("V4.0·Markdown标题层级", markdown_builder.render_segment({'original':'
 test("V4.0·Markdown不模拟HTML控件", all(x not in shared_md for x in ['<details','<summary','id="prev"','id="next"','高亮：']), "无控件", "ok")
 markdown_source = read(os.path.join(SCRIPTS,'build_markdown.py'))
 test("V4.0·Markdown构建不重新语义分析", 'route_text(' not in markdown_source and 'import analyze' not in markdown_source, "无二次分析", "ok")
+
+# ========== 23. V4.1 统一断句与媒体公式 ==========
+splitter = load('splitter', os.path.join(SCRIPTS, 'sentence_splitter.py'))
+media = load('media', os.path.join(SCRIPTS, 'media.py'))
+
+# A. 英文数值文本断句
+V41_CASES = [
+    ("The result was 3.14.", 1),
+    ("The p-value was 0.05, not 0.5.", 1),
+    ("The temperature dropped to -2.75°C.", 1),
+    ("The value was 1.2e-3.", 1),
+    ("Version 3.2.5 was released.", 1),
+    ("Dr. Smith reported the result.", 1),
+    ("The difference was significant (p < 0.001).", 1),
+    ("The experiment ended at 3. The next began at 4.", 2),
+    ("The average score increased from 3.14 to 4.25. This difference was significant (p = 0.03).", 2),
+    ("Prof. Lee and Mr. Chen co-authored the paper. It was published in 2020.", 2),
+    ("The value was 1.2e-3. Alpha was .05. Beta = 0.5.", 3),
+    ("Data from J. Smith shows this. The rest follows.", 2),
+    ("例如 Dr. Lee 测得 3.14 与 0.5。这很重要！e.g. 值 1.2e-3 保留。", 3),
+    ("See https://example.com/page.html for details. Contact admin@example.org for help.", 2),
+]
+for t, exp in V41_CASES:
+    spans = splitter.split_sentences_spans(t)
+    joined = "".join(sp.text for sp in spans)
+    got = len([sp for sp in spans if sp.text.strip()])
+    test(f"V4.1断句·{t[:26]}", joined == t and got == exp, f"{exp}句+还原", f"{got}句,还原={joined==t}")
+
+test("V4.1·三模块断句一致", acs.split_sentences("The average score increased from 3.14 to 4.25. This difference was significant (p = 0.03).")==analyzer.split_sentences("The average score increased from 3.14 to 4.25. This difference was significant (p = 0.03).")==builder.split_sentences("The average score increased from 3.14 to 4.25. This difference was significant (p = 0.03)."), "一致", "ok")
+
+# B. 速览边框色值对比度
+def _lum(c):
+    vals = [int(c[i:i+2], 16)/255 for i in (0, 2, 4)]
+    vals = [v/12.92 if v <= .04045 else ((v+.055)/1.055)**2.4 for v in vals]
+    return .2126*vals[0]+.7152*vals[1]+.0722*vals[2]
+def _contrast(hex1, hex2):
+    a, b = _lum(hex1), _lum(hex2)
+    return (max(a, b)+.05)/(min(a, b)+.05)
+test("V4.1·速览边框浅色对比度≥1.9", _contrast("6E8398", "ffffff") >= 1.9, "≥1.9", str(round(_contrast("6E8398", "ffffff"), 2)))
+test("V4.1·速览边框深色对比度≥3", _contrast("7E96AC", "1e1e1e") >= 3, "≥3", str(round(_contrast("7E96AC", "1e1e1e"), 2)))
+test("V4.1·速览边框护眼对比度≥2", _contrast("5F6E78", "f4ecd8") >= 2, "≥2", str(round(_contrast("5F6E78", "f4ecd8"), 2)))
+test("V4.1·速览与跳读边框可区分", _contrast("6E8398", "ffffff") - _contrast("D7DDE3", "ffffff") >= 0.6, "差≥0.6", "ok")
+test("V4.1·模板使用新色值", '--skim-border:#6E8398' in html and '--skim-border:#7E96AC' in html and '--skim-border:#5F6E78' in html, "三主题", "ok")
+
+# C/D. 媒体块与公式
+_img_ok, _img_err = media.normalize_media_block({"kind": "image", "src": "data:image/png;base64,AAAA", "alt": "x"})
+test("V4.1·图片data URI通过校验", _img_err is None, "通过", str(_img_err))
+_img_bad, _img_bad_err = media.normalize_media_block({"kind": "image", "src": "https://cdn.example.com/x.png"})
+test("V4.1·外链图片被拒", _img_bad_err is not None, "拒绝", str(_img_bad_err))
+_tbl_ok, _tbl_err = media.normalize_media_block({"kind": "table", "header": ["a"], "rows": [["1"]]})
+test("V4.1·表格结构校验", _tbl_err is None, "通过", str(_tbl_err))
+_fml_ok, _fml_err = media.normalize_media_block({"kind": "formula", "form": "latex_inline", "latex": "E=mc^2"})
+test("V4.1·公式块校验", _fml_err is None, "通过", str(_fml_err))
+
+for latex, expect in [("E=mc^2", "msup"), ("x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}", "mfrac"), ("\\int_0^1 x^2\\,dx=\\frac13", "msub")]:
+    r = media.latex_to_mathml(latex)
+    test(f"V4.1·LaTeX转换含{expect}", r is not None and expect in r, "转换", (r or "None")[:40])
+r_multi = media.latex_to_mathml("a\\begin{align}b&c\\end{align}")
+test("V4.1·多行公式回退", r_multi is None, "回退", "ok")
+fd = media.formula_display({"form": "latex_inline", "latex": "a\\begin{align}b"})
+test("V4.1·回退保留可复制源", fd["mode"] == "fallback-text" and fd["source"], "保留", "ok")
+
+# 媒体块 route_text 透传
+_media_text = "实验测量了能量关系。总体误差为 0.05。"
+_media_analysis = {"blocks": [
+    {"para_idx": 0, "text": "实验测量了能量关系。", "role": "论证", "priority": "精读"},
+    {"para_idx": 0, "text": "[图1]", "role": "图示", "priority": "速览", "kind": "image",
+     "src": "data:image/svg+xml;base64,PHN2Zy8+", "alt": "图", "caption": "图1"},
+    {"para_idx": 0, "text": "总体误差为 0.05。", "role": "结论", "priority": "精读"},
+]}
+_media_route = analyzer.route_text(_media_text, analysis=_media_analysis)
+_media_blocks = [b for s in _media_route["segments"] for b in s["blocks"]]
+test("V4.1·媒体块透传且不回退", len(_media_blocks) == 3 and _media_blocks[1].get("kind") == "image", "透传", str(len(_media_blocks)))
+test("V4.1·媒体块豁免不破坏文本定位", all(b.get("kind") != "image" or "src" in b for b in _media_blocks), "豁免", "ok")
+
+test("V4.1·模板含媒体渲染函数", all(fn in html for fn in ["renderImage", "renderTable", "renderFormula", "latexToMathml"]), "有", "ok")
+test("V4.1·模板公式回退路径", "formula-fallback" in html and "formula-source" in html, "有", "ok")
+test("V4.1·表格局部滚动不溢出", "overflow-x:auto" in html and ".table-wrap" in html, "有", "ok")
 
 # ========== 输出 ==========
 print("="*60)

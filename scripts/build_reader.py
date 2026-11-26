@@ -25,25 +25,12 @@ SENT_SPLIT = re.compile(r'([。！？；.!?])')
 
 
 def split_sentences(text):
-    """按全角/半角句末标点切句，保留原标点，不替换不补加。"""
-    parts = SENT_SPLIT.split(text)
-    out = []
-    buf = ""
-    for p in parts:
-        if not p:
-            continue
-        if SENT_SPLIT.fullmatch(p):
-            buf += p
-            if buf.strip():
-                out.append(buf)
-            buf = ""
-        else:
-            if buf.strip():
-                out.append(buf)
-            buf = p
-    if buf.strip():
-        out.append(buf)
-    return [s.strip() for s in out if s.strip()] or [text.strip()]
+    """V4.1: delegate to the unified sentence splitter, consistent with acs.py/analyze.py."""
+    import importlib.util as _ilu, os as _os
+    _here = _os.path.dirname(_os.path.abspath(__file__))
+    _spec = _ilu.spec_from_file_location("sentence_splitter", _os.path.join(_here, "sentence_splitter.py"))
+    _ss = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_ss)
+    return [sp.text.strip() for sp in _ss.split_sentences_spans(text) if sp.text.strip()] or [text.strip()]
 
 
 def build_data_from_text(text, title="阅读辅助", analysis=None):

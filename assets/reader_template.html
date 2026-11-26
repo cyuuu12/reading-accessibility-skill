@@ -8,7 +8,7 @@
   :root{
     --bg:#fff; --fg:#1a1a1a; --fg-dim:#5f5f5f; --muted:#626262; --accent:#1f6feb;
     --focus-border:#CC6437; --focus-fill:#FFF2E9; --em-fg:#A8431F;
-    --skim-border:#9CABB8; --skip-border:#D7DDE3;
+    --skim-border:#6E8398; --skip-border:#D7DDE3;
     --hl-bg:#fff3cd; --hl-border:#a87500; --control-bg:#f6f8fa;
     --reader-font-size:18px; --reader-line-height:1.7;
     --body-max-width:36em; --header-height:64px;
@@ -17,13 +17,13 @@
   [data-theme="dark"]{
     --bg:#1e1e1e; --fg:#e6e6e6; --fg-dim:#a3a3a3; --muted:#aaa; --accent:#82bfff;
     --focus-border:#E48A5F; --focus-fill:#3A2A1E; --em-fg:#FFAB84;
-    --skim-border:#718895; --skip-border:#555;
+    --skim-border:#7E96AC; --skip-border:#555;
     --hl-bg:#5A4718; --hl-border:#D8A928; --control-bg:#2a2a2a;
   }
   [data-theme="sepia"]{
     --bg:#f4ecd8; --fg:#2e2a20; --fg-dim:#665d4e; --muted:#625846; --accent:#75500b;
     --focus-border:#9D5B35; --focus-fill:#EFE0C8; --em-fg:#75401F;
-    --skim-border:#8F9B9B; --skip-border:#C1B5A0;
+    --skim-border:#5F6E78; --skip-border:#C1B5A0;
     --hl-bg:#E8D9A8; --hl-border:#856300; --control-bg:#EDE0C8;
   }
   *{box-sizing:border-box}
@@ -62,6 +62,24 @@
   /* 速览是清晰基准态：不删减、不染色、不降低透明度，仅以行长和间距辅助排版。 */
   .region[data-pri="速览"] .block{padding-top:15px;padding-bottom:15px;padding-left:11px;font-weight:400;background:transparent}
   .skip-fold .block{padding-left:11px;background:transparent}
+  /* V4.1 媒体块：图片/表格/公式。kind 与阅读策略独立;媒体随所在区域呈现,跳读内展开后可见。 */
+  .media-block{padding:10px 12px 10px 10px}
+  .figure{margin:0;padding:4px 0}
+  .figure img{display:block;max-width:100%;height:auto;border-radius:4px;cursor:zoom-in;transition:max-width .15s}
+  .figure img.zoomed{max-width:none;cursor:zoom-out}
+  .figure figcaption{font-size:.8em;color:var(--muted);margin-top:6px}
+  .table-wrap{max-width:100%;overflow-x:auto;margin:4px 0;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;font-size:.92em;min-width:50%}
+  th,td{border:1px solid var(--skim-border);padding:6px 10px;text-align:left;white-space:nowrap}
+  th{background:var(--control-bg);font-weight:700}
+  .table-caption{font-size:.8em;color:var(--muted);margin-top:6px}
+  .formula{margin:2px 0;font-size:1em;color:var(--fg)}
+  .formula-inline{display:inline}
+  .formula-block{display:block;text-align:center;padding:8px 0;overflow-x:auto}
+  .formula math{font-family:"Times New Roman",serif}
+  .formula-fallback{font-family:Consolas,monospace;font-size:.92em;white-space:pre-wrap;word-break:break-all;display:inline-block;padding:2px 6px;background:var(--control-bg);border-radius:4px}
+  .formula-block .formula-fallback{display:block;padding:8px 10px}
+  .formula-source{display:none}
   .block strong{font-weight:700;color:inherit}
   .block[data-pri="精读"] strong{color:var(--em-fg)}
   .sent{padding:1px 2px;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;scroll-margin-top:calc(var(--header-height) + 8px);scroll-margin-bottom:var(--bottom-gap)}
@@ -163,9 +181,149 @@ function appendEmphasized(parent,text,offset,emphasis){
     else parent.appendChild(document.createTextNode(text.slice(a,b)));
   }
 }
+function latexToMathml(latex){
+  // 与 scripts/media.py 保持一致的极小转换器;失败返回 null 由调用方回退为可复制文本
+  try{
+    const src=String(latex).trim();
+    if(!src||src.includes('\\begin{align')||src.includes('&'))return null;
+    const greek={alpha:'α',beta:'β',gamma:'γ',delta:'δ',epsilon:'ε',theta:'θ',lambda:'λ',mu:'μ',nu:'ν',pi:'π',rho:'ρ',sigma:'σ',phi:'φ',chi:'χ',psi:'ψ',omega:'ω',Gamma:'Γ',Delta:'Δ',Theta:'Θ',Lambda:'Λ',Pi:'Π',Sigma:'Σ',Phi:'Φ',Psi:'Ψ',Omega:'Ω'};
+    const ops={pm:'±',times:'×',cdot:'·',le:'≤',ge:'≥',ne:'≠',approx:'≈',infty:'∞',propto:'∝'};
+    const fns=['int','sum','prod','lim','log','ln','sin','cos','tan','exp','max','min'];
+    function readGroup(f,i){
+      if(f[i]==='{')i++;
+      let depth=1,st=i;
+      while(i<f.length){
+        if(f[i]==='{')depth++;
+        else if(f[i]==='}'){depth--;if(depth===0)return [f.slice(st,i),i+1]}
+        i++;
+      }
+      return [null,i];
+    }
+    function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+    function parse(f){
+      let out='',i=0;
+      while(i<f.length){
+        const c=f[i];
+        if(c===' '){i++;continue}
+        if(c==='\\'){
+          const m=f.slice(i).match(/^\\([a-zA-Z]+)(\{)?/);
+          if(!m){i++;continue}
+          const name=m[1];i+=m[0].length;
+          if(m[2]){
+            const [grp,ni]=readGroup(f,i);i=ni;
+            if(grp===null)return null;
+            // 组内多元素时包 mrow,保证 mfrac/msqrt 子元素结构合法
+            const wrapRow=(s)=>s&&s.includes('</mo><')||s.includes('</mi><')||s.includes('</mn><')?'<mrow>'+s+'</mrow>':s;
+            if(name==='frac'){
+              const [grp2,ni2]=readGroup(f,i);i=ni2;
+              if(grp2===null)return null;
+              const num=parse(grp),den=parse(grp2);
+              if(num===null||den===null)return null;
+              out+='<mfrac>'+wrapRow(num)+wrapRow(den)+'</mfrac>';
+            }else if(name==='sqrt'){
+              const inner=parse(grp);if(inner===null)return null;
+              out+='<msqrt>'+wrapRow(inner)+'</msqrt>';
+            }else{
+              const inner=parse(grp);if(inner===null)return null;
+              out+='<mrow>'+inner+'</mrow>';
+            }
+            continue;
+          }
+          if(name in greek)out+='<mi>'+greek[name]+'</mi>';
+          else if(name in ops)out+='<mo>'+ops[name]+'</mo>';
+          else if(fns.includes(name))out+='<mo>'+name+'</mo>';
+          else if(name==='left'||name==='right'){if(i<f.length&&'.([|'.includes(f[i]))i++}
+          else if(name===','){}
+          else out+='<mi>'+esc(name)+'</mi>';
+          continue;
+        }
+        if(c>='0'&&c<='9'){const m=f.slice(i).match(/^[0-9.]+/);out+='<mn>'+m[0]+'</mn>';i+=m[0].length;continue}
+        if(/[a-zA-Z]/.test(c)){const m=f.slice(i).match(/^[a-zA-Z]+/);out+='<mi>'+m[0]+'</mi>';i+=m[0].length;continue}
+        if(c==='^'||c==='_'){
+          i++;
+          let inner;
+          if(f[i]==='{'){const [grp,ni]=readGroup(f,i);if(grp===null)return null;i=ni;inner=parse(grp)}
+          else{const m=f.slice(i).match(/^[0-9a-zA-Z]+/);if(!m)return null;inner=(/[a-zA-Z]/.test(m[0])?'<mi>':'<mn>')+m[0]+(/[a-zA-Z]/.test(m[0])?'</mi>':'</mn>');i+=m[0].length}
+          if(inner===null||!out)return null;
+          const tag=c==='^'?'msup':'msub';
+          // 取最后一个完整元素(<tag>...</tag>)作为 base;残缺时返回 null 触发回退
+          const closeIdx=out.lastIndexOf('</');
+          if(closeIdx<0)return null;
+          const openIdx=out.lastIndexOf('<',closeIdx-1);
+          if(openIdx<0)return null;
+          const base=out.slice(openIdx);
+          if(!/^<[a-z]+>[\s\S]*<\/[a-z]+>$/.test(base))return null;
+          out=out.slice(0,openIdx)+'<'+tag+'>'+base+inner+'</'+tag+'>';
+          continue;
+        }
+        if('=<>+-*/'.includes(c)){out+='<mo>'+c+'</mo>';i++;continue}
+        if('()[]|,'.includes(c)){out+='<mo>'+c+'</mo>';i++;continue}
+        i++;
+      }
+      return out||null;
+    }
+    return parse(src);
+  }catch(e){return null}
+}
+function renderFormula(el,b){
+  const wrap=document.createElement('div');wrap.className='formula '+(b.form==='latex_block'?'formula-block':'formula-inline');
+  let mathml=null;
+  if(b.form==='mathml'&&b.mathml)mathml=b.mathml;
+  else if(b.latex)mathml=latexToMathml(b.latex);
+  if(mathml){
+    const m=document.createElementNS('http://www.w3.org/1998/Math/MathML','math');
+    m.setAttribute('display',b.form==='latex_block'?'block':'inline');
+    m.innerHTML=mathml;
+    wrap.appendChild(m);
+  }else{
+    const fb=document.createElement('span');fb.className='formula-fallback';
+    fb.textContent=b.latex||b.mathml||b.alt||'';
+    wrap.appendChild(fb);
+  }
+  if(b.alt||b.latex)wrap.setAttribute('aria-label',b.alt||b.latex);
+  if(b.alt){wrap.title=b.alt}
+  el.appendChild(wrap);
+  // 原始源保底:保证可复制与保真
+  if(mathml&&(b.latex||b.mathml)){
+    const src=document.createElement('code');src.className='formula-source';src.textContent=b.latex||b.mathml;
+    src.setAttribute('aria-hidden','true');el.appendChild(src);
+  }
+}
+function renderImage(el,b){
+  const fig=document.createElement('figure');fig.className='figure';
+  const img=document.createElement('img');img.src=b.src;img.alt=b.alt||'';
+  if(b.width)img.style.maxWidth=b.width+'px';
+  img.loading='lazy';img.decoding='async';
+  img.addEventListener('click',()=>{if(img.classList.contains('zoomed')){img.classList.remove('zoomed')}else{img.classList.add('zoomed')}});
+  fig.appendChild(img);
+  if(b.caption){const cap=document.createElement('figcaption');cap.textContent=b.caption;fig.appendChild(cap)}
+  el.appendChild(fig);
+}
+function renderTable(el,b){
+  const wrap=document.createElement('div');wrap.className='table-wrap';
+  const table=document.createElement('table');
+  if(b.header){
+    const thead=document.createElement('thead');const tr=document.createElement('tr');
+    b.header.forEach(h=>{const th=document.createElement('th');th.textContent=String(h);tr.appendChild(th)});
+    thead.appendChild(tr);table.appendChild(thead);
+  }
+  const tbody=document.createElement('tbody');
+  (b.rows||[]).forEach(row=>{
+    const tr=document.createElement('tr');
+    (row||[]).forEach(cell=>{const td=document.createElement('td');td.textContent=String(cell);tr.appendChild(td)});
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);wrap.appendChild(table);
+  if(b.caption){const cap=document.createElement('div');cap.className='table-caption';cap.textContent=b.caption;wrap.appendChild(cap)}
+  el.appendChild(wrap);
+}
 function makeBlock(entry){
   const el=document.createElement('div');const pri=entry.block.priority||'速览';
   el.className='block'+(entry.paraStart?' para-start':'');el.dataset.pri=pri;el.dataset.blockId=entry.id;el.dataset.seg=entry.segNo;
+  const b=entry.block;
+  if(b.kind==='image'){el.classList.add('media-block');renderImage(el,b);return el}
+  if(b.kind==='table'){el.classList.add('media-block');renderTable(el,b);return el}
+  if(b.kind==='formula'){el.classList.add('media-block');renderFormula(el,b);return el}
   const text=entry.block.text||'',sentences=entry.block.sentences||[text],em=entry.block.emphasis||[];let cursor=0;
   sentences.forEach((sentence,si)=>{
     let at=text.indexOf(sentence,cursor);if(at<0)at=text.indexOf(sentence);if(at<0)return;

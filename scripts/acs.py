@@ -16,6 +16,13 @@ ACS = 40·S_sentence + 25·S_vocab + 15·S_pronoun + 10·S_nest + 10·S_line
 import sys
 import json
 import re
+import os
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("sentence_splitter", os.path.join(_HERE, "sentence_splitter.py"))
+_ss = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_ss)
+split_sentences_spans = _ss.split_sentences_spans
 
 # ---------------------------------------------------------------------------
 # 3500 常用字表：用 GB2312 一级字库（3755 个常用汉字）作为零依赖近似来源。
@@ -57,9 +64,10 @@ def split_segments(text):
     return segs
 
 
+# 句子切分：统一使用 sentence_splitter（V4.1，上下文感知，保护小数/缩写/版本号）
 def split_sentences(seg):
-    parts = SENT_SPLIT.split(seg)
-    return [p.strip() for p in parts if p.strip()]
+    """V4.1：委托统一断句器；返回句子文本列表（含终点标点）。"""
+    return [sp.text.strip() for sp in split_sentences_spans(seg) if sp.text.strip()] or [seg.strip()]
 
 
 def score_sentence(seg, sents):

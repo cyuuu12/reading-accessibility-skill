@@ -12,6 +12,17 @@ analyze.py — 统一处理层（V3.2.4）
 零依赖。
 """
 import re
+import os
+import importlib.util as _ilu
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ss_spec = _ilu.spec_from_file_location("sentence_splitter", os.path.join(_HERE, "sentence_splitter.py"))
+_ss = _ilu.module_from_spec(_ss_spec); _ss_spec.loader.exec_module(_ss)
+_media_spec = _ilu.spec_from_file_location("media", os.path.join(_HERE, "media.py"))
+_media = _ilu.module_from_spec(_media_spec); _media_spec.loader.exec_module(_media)
+
+# 媒体回退诊断收集（每次 route_text 清空）
+block_media_dropped = []
 
 _SENT_SPLIT = re.compile(r'([。！？；.!?])')
 DEFAULT_FOCUS_THRESHOLD = 0.60
@@ -25,24 +36,8 @@ _CONSERVATIVE_HEADING = re.compile(
 
 
 def split_sentences(text):
-    """按全角/半角句末标点切句，保留原标点。"""
-    parts = _SENT_SPLIT.split(text)
-    out, buf = [], ""
-    for p in parts:
-        if not p:
-            continue
-        if _SENT_SPLIT.fullmatch(p):
-            buf += p
-            if buf.strip():
-                out.append(buf)
-            buf = ""
-        else:
-            if buf.strip():
-                out.append(buf)
-            buf = p
-    if buf.strip():
-        out.append(buf)
-    return [s.strip() for s in out if s.strip()] or [text.strip()]
+    """V4.1: delegate to the unified context-aware sentence splitter; sentence boundaries are consistent with acs.py/build_reader.py."""
+    return [sp.text.strip() for sp in _ss.split_sentences_spans(text) if sp.text.strip()] or [text.strip()]
 
 
 def split_paragraphs(text):
@@ -136,13 +131,18 @@ def _validate_blocks(blocks, original):
     """
     if not blocks:
         return False, "无 block"
-    # 约束1：每个 block.text 能在原文中找到
+    # 约束1：每个 block.text 能在原文中找到（媒体块豁免：位置由顺序保证）
     pos = 0
     spans = []
     for b in blocks:
         bt = b.get("text", "").strip()
         if not bt:
             return False, "空 block"
+        if b.get("kind") in ("image", "table", "formula"):
+            # 媒体块：text 是占位标记/公式源，不要求在段落中定位；
+            # 约束3 的覆盖校验也按非文本块排除处理。
+            spans.append(None)
+            continue
         idx = original.find(bt, pos)
         if idx < 0:
             # 从头找
@@ -151,27 +151,36 @@ def _validate_blocks(blocks, original):
                 return False, f"block 无法定位: {bt[:20]}..."
         spans.append((idx, idx + len(bt)))
         pos = idx + len(bt)
-    # 约束2：不重叠
-    spans.sort()
-    for j in range(1, len(spans)):
-        if spans[j][0] < spans[j - 1][1]:
+    # 约束2：不重叠（仅文本块）
+    text_spans = sorted(s for s in spans if s)
+    for j in range(1, len(text_spans)):
+        if text_spans[j][0] < text_spans[j - 1][1]:
             return False, "block 重叠"
-    # 约束3：覆盖完整（非空白字符一致）
-    covered = _nonws("".join(b.get("text", "") for b in blocks))
-    if covered != _nonws(original):
-        return False, "block 未覆盖全文"
+    # 约束3：覆盖完整（非空白字符一致；媒体块的占位 text 不计入覆盖）
+    text_blocks = [b for b in blocks if b.get("kind") not in ("image", "table", "formula")]
+    if text_blocks:
+        covered = _nonws("".join(b.get("text", "") for b in text_blocks))
+        if covered != _nonws(original):
+            return False, "block 未覆盖全文"
     return True, None
 
 
 # ── 语义块构建（合并相邻同类句） ──────────────────
 def _build_blocks_from_analysis(paragraph, analysis_blocks):
-    """从 Agent 分析结果构建语义块；emphasis 随后统一校验。"""
+    """从 Agent 分析结果构建语义块；emphasis 随后统一校验。
+
+    V4.1：块可携带 kind（text/image/table/formula）。媒体块经 media.normalize_media_block
+    校验；非法媒体块回退为 text 并记入 _meta.diagnostic.media.dropped。
+    kind 与 role/priority 独立：图片不等于跳读，公式不等于精读。
+    """
     blocks = []
+    media_dropped = []
     for b in analysis_blocks:
         text = b.get("text", "").strip()
         sents = split_sentences(text)
         normalized = _normalize_analysis_block(b)
-        blocks.append({
+        kind = normalized.get("kind")
+        block = {
             "text": text,
             "role": normalized.get("role", "陈述"),
             "structure": normalized.get("structure"),
@@ -180,7 +189,21 @@ def _build_blocks_from_analysis(paragraph, analysis_blocks):
             "sentences": sents,
             "preview": normalized.get("preview"),
             "emphasis": normalized.get("emphasis") or [],
-        })
+        }
+        if kind and kind != "text":
+            media_block, err = _media.normalize_media_block(b)
+            if err:
+                media_dropped.append({"reason": err, "kind": kind})
+                # 回退为纯文本块：媒体数据缺失时不得静默删除正文
+            else:
+                block["kind"] = kind
+                for field in ("src", "alt", "caption", "rows", "header",
+                              "form", "latex", "mathml", "width", "height"):
+                    if field in media_block:
+                        block[field] = media_block[field]
+        blocks.append(block)
+    if media_dropped:
+        block_media_dropped.append(media_dropped)
     return blocks
 
 
@@ -525,6 +548,7 @@ def route_text(text, goal="general", high_risk=False, analysis=None,
         })
 
     all_blocks = [b for seg in segments for b in seg["blocks"]]
+    block_media_dropped.clear()
     emphasis_diagnostic = _sanitize_emphasis(all_blocks, text)
     configured = analysis.get("focus_threshold") if isinstance(analysis, dict) else None
     if isinstance(configured, (int, float)) and not isinstance(configured, bool) and 0 < configured <= 1:
