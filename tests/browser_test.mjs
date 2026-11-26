@@ -61,6 +61,7 @@ try{
   await send('Page.enable');await send('Runtime.enable');await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
   await navigate(demo);
   test('浏览器无脚本异常',errors.length===0,errors);
+  test('V4.0无footer及上下句遗留控件',await evaluate(`!document.querySelector('footer,#readerFooter,#prev,#next,#pos')&&getComputedStyle(document.querySelector('main')).paddingBottom==='32px'`));
   const initial=await evaluate(`(()=>{const f=document.querySelector('.block[data-pri="精读"]'),s=document.querySelector('.block[data-pri="速览"]'),r=f.closest('.region'),d=document.querySelector('.skip-fold');return {focusBg:getComputedStyle(f).backgroundColor,focusBorder:getComputedStyle(r).borderLeftWidth,focusColor:getComputedStyle(f).color,strong:[...f.querySelectorAll('strong')].map(x=>({weight:getComputedStyle(x).fontWeight,color:getComputedStyle(x).color,text:x.textContent})),skimColor:getComputedStyle(s).color,skimWeight:getComputedStyle(s).fontWeight,skimBg:getComputedStyle(s).backgroundColor,skimText:s.textContent,skimExpected:DATA.segments.flatMap(x=>x.blocks).find(x=>x.priority==='速览').text,bodyColor:getComputedStyle(document.body).color,folds:document.querySelectorAll('.skip-fold').length,skipOpen:d.open,skipBg:getComputedStyle(d).backgroundColor,skipBorder:getComputedStyle(d).borderLeftStyle,skipBorderWidth:getComputedStyle(d).borderLeftWidth,previewColor:getComputedStyle(d.querySelector('.skip-preview')).color,preview:d.querySelector('.skip-preview').textContent,previewVisible:d.querySelector('.skip-preview').getClientRects().length>0,regions:document.querySelectorAll('.region').length,blocks:document.querySelectorAll('.block').length,perSegmentButtons:document.querySelectorAll('.segfoot').length,originalButtons:document.querySelectorAll('#origAll').length}})()`);
   test('精读暖底/3-4px边框计算样式生效',initial.focusBg==='rgb(255, 242, 233)'&&initial.focusBorder==='3px',initial);
   test('跳读无填充且弱于速览',initial.skipBg==='rgba(0, 0, 0, 0)'&&initial.skipBorder==='dashed'&&initial.skipBorderWidth==='2px'&&contrast(initial.previewColor,'rgb(255,255,255)')>=4.5,initial);
@@ -87,7 +88,7 @@ try{
   test('恢复折叠与按钮状态一致',await evaluate(`[...document.querySelectorAll('.skip-fold')].every(x=>!x.open)&&document.getElementById('expandAll').textContent==='全部展开'`));
 
   await click('#hlBtn');
-  const sentPoint=await evaluate(`(()=>{const idx=sents.findIndex(x=>{const r=x.el.getBoundingClientRect();return visible(x.el)&&r.top>headerEl.getBoundingClientRect().bottom+4&&r.bottom<footerEl.getBoundingClientRect().top-4});if(idx<0)return null;const r=sents[idx].el.getBoundingClientRect();return {idx,x:r.left+r.width/2,y:r.top+r.height/2}})()`);
+  const sentPoint=await evaluate(`(()=>{const idx=sents.findIndex(x=>{const r=x.el.getBoundingClientRect();return visible(x.el)&&r.top>headerEl.getBoundingClientRect().bottom+4&&r.bottom<window.innerHeight-4});if(idx<0)return null;const r=sents[idx].el.getBoundingClientRect();return {idx,x:r.left+r.width/2,y:r.top+r.height/2}})()`);
   if(!sentPoint)throw new Error('未找到安全视口内句子');
   await clickAt(sentPoint.x,sentPoint.y);
   const focusLight=await evaluate(`(()=>{const a=document.querySelector('.sent.active'),cur=a.closest('.block'),dim=document.querySelector('.block.dimmed');return {activeBg:getComputedStyle(a).backgroundColor,currentBg:getComputedStyle(cur).backgroundColor,dimColor:getComputedStyle(dim).color,dimmed:document.querySelectorAll('.block.dimmed').length,cur:state.cur}})()`);
@@ -214,35 +215,35 @@ try{
   const sepia=await evaluate(`(()=>{const b=document.querySelector('.block[data-pri="速览"]');return {size:getComputedStyle(b).fontSize,fg:getComputedStyle(b).color,bg:getComputedStyle(document.body).backgroundColor}})()`);
   test('护眼主题字号统一且对比度≥4.5:1',sepia.size==='20px'&&contrast(sepia.fg,sepia.bg)>=4.5,{...sepia,contrast:contrast(sepia.fg,sepia.bg)});
 
-  // V3.2.5 滚动验收：动态底部间距、最后一句可见、首末句聚焦不被遮挡。
-  const scrollFixture={title:'V3.2.5 滚动验收',segments:[],original_text:'',conservative:false};
+  // V4.0 滚动验收：无底部导航，正常留白，最后一句在真实视口内完整可见。
+  const scrollFixture={title:'V4.0 滚动验收',segments:[],original_text:'',conservative:false};
   for(let i=1;i<=48;i++){
-    const text=`滚动验收第${i}句：这一句用于确认正文底部间距、固定导航栏、动态视口和长文末行都能稳定适配，不依赖固定九十像素留白。`;
+    const text=`滚动验收第${i}句：这一句用于确认正常底部留白、顶部工具栏、动态视口和长文末行都能稳定适配，不依赖固定导航栏。`;
     scrollFixture.segments.push({seg_no:i,original:text,sentences:[text],blocks:[{text,role:'核心论点',priority:i%3===0?'速览':'精读',sentences:[text],preview:null}]});
     scrollFixture.original_text+=(scrollFixture.original_text?'\n\n':'')+text;
   }
-  const scrollFile=path.join(OUT,'scroll_fixture_v325.html');fs.writeFileSync(scrollFile,fs.readFileSync(path.join(ROOT,'assets','reader_template.html'),'utf8').replace('__READER_DATA__',JSON.stringify(scrollFixture)));
+  const scrollFile=path.join(OUT,'scroll_fixture_v400.html');fs.writeFileSync(scrollFile,fs.readFileSync(path.join(ROOT,'assets','reader_template.html'),'utf8').replace('__READER_DATA__',JSON.stringify(scrollFixture)));
   await navigate(scrollFile);await select('fs','24');await select('lh','2.0');await select('th','light');
   const scrollCheck=async()=>{
     await evaluate('window.scrollTo(0,document.documentElement.scrollHeight)');await sleep(120);
-    return evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {gap:document.documentElement.style.getPropertyValue('--bottom-gap'),footerH:Math.round(fr.height),aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1,right:lr.right<=document.documentElement.clientWidth+1,text:last.textContent.slice(-6)}})()`);
+    return evaluate(`(()=>{const h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1),main=document.querySelector('main');const hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {gap:getComputedStyle(document.documentElement).getPropertyValue('--bottom-gap').trim(),mainPadding:getComputedStyle(main).paddingBottom,inViewport:lr.bottom<=window.innerHeight+1,belowHeader:lr.top>=hr.bottom-1,right:lr.right<=document.documentElement.clientWidth+1,viewport:window.innerHeight,lastBottom:lr.bottom,text:last.textContent.slice(-6)}})()`);
   };
   const desktopScroll=await scrollCheck();
-  test('桌面长文最后一个字完整可见且不被footer遮挡',desktopScroll.aboveFooter&&desktopScroll.belowHeader&&desktopScroll.right,{desktopScroll});
+  test('桌面长文最后一个字完整可见且留白适度',desktopScroll.inViewport&&desktopScroll.belowHeader&&desktopScroll.right&&desktopScroll.mainPadding==='32px',{desktopScroll});
   await evaluate('if(!state.hl)state.hl=true;applySettings();render()');await sleep(80);
   await evaluate('focusAt(sents.length-1)');await sleep(280);
-  const lastFocus=await evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1}})()`);
-  test('桌面最后一句聚焦后仍完整可见',lastFocus.cur===lastFocus.total-1&&lastFocus.aboveFooter&&lastFocus.belowHeader,lastFocus);
+  const lastFocus=await evaluate(`(()=>{const h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,inViewport:lr.bottom<=window.innerHeight+1,belowHeader:lr.top>=hr.bottom-1}})()`);
+  test('桌面最后一句聚焦后仍完整可见',lastFocus.cur===lastFocus.total-1&&lastFocus.inViewport&&lastFocus.belowHeader,lastFocus);
   await evaluate('focusAt(0)');await sleep(280);
   const firstFocus=await evaluate(`(()=>{const h=document.querySelector('header'),first=document.querySelector('.sent');const fr=h.getBoundingClientRect(),lr=first.getBoundingClientRect();return {cur:state.cur,visible:lr.top>=fr.bottom-1&&lr.bottom<=window.innerHeight}})()`);
   test('桌面第一句聚焦后不被工具栏遮挡',firstFocus.cur===0&&firstFocus.visible,firstFocus);
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(120);
   const mobileScroll=await scrollCheck();
-  test('390px长文末行完整可见且无横向滚动',mobileScroll.aboveFooter&&mobileScroll.belowHeader&&mobileScroll.right&&!(await evaluate('document.documentElement.scrollWidth>document.documentElement.clientWidth')),mobileScroll);
+  test('390px长文末行完整可见且无横向滚动',mobileScroll.inViewport&&mobileScroll.belowHeader&&mobileScroll.right&&!(await evaluate('document.documentElement.scrollWidth>document.documentElement.clientWidth')),mobileScroll);
   await evaluate('focusAt(sents.length-1)');await sleep(280);
-  const mobileLastFocus=await evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1}})()`);
-  test('390px最后一句聚焦后仍完整可见',mobileLastFocus.cur===mobileLastFocus.total-1&&mobileLastFocus.aboveFooter&&mobileLastFocus.belowHeader,mobileLastFocus);
-  await screenshot('07-v325-mobile-scroll.png');
+  const mobileLastFocus=await evaluate(`(()=>{const h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,inViewport:lr.bottom<=window.innerHeight+1,belowHeader:lr.top>=hr.bottom-1}})()`);
+  test('390px最后一句聚焦后仍完整可见',mobileLastFocus.cur===mobileLastFocus.total-1&&mobileLastFocus.inViewport&&mobileLastFocus.belowHeader,mobileLastFocus);
+  await screenshot('07-v400-mobile-scroll.png');
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});await sleep(100);
   const mobile=await evaluate(`({overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,minButton:Math.min(...[...document.querySelectorAll('.tbtn')].map(x=>x.getBoundingClientRect().height)),width:document.documentElement.clientWidth})`);
@@ -256,6 +257,22 @@ try{
   const mobileCleared=await evaluate('state.cur===-1&&state.hl===true&&!document.body.classList.contains("focus-active")');
   test('移动端触摸聚焦后可点空白取消',mobileFocused&&mobileCleared,{mobileFocused,mobileCleared});
   await screenshot('03-mobile-sepia.png');
+
+  // V4.0 同源 iframe 宿主近似验收（不冒充 Work 专用宿主）。
+  const hostFile=path.join(OUT,'iframe_host_v400.html');
+  const embeddedHtml=fs.readFileSync(scrollFile,'utf8').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+  fs.writeFileSync(hostFile,`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;height:100%;overflow:hidden}iframe{display:block;border:0;width:100%;height:100%}</style><iframe id="readerFrame" srcdoc="${embeddedHtml}"></iframe>`);
+  const embeddedCheck=async()=>{
+    await send('Page.navigate',{url:pathToFileURL(hostFile).href});
+    for(let i=0;i<60;i++){if(await evaluate(`!!document.getElementById('readerFrame')?.contentDocument?.querySelector('#root')`)){await sleep(120);break}await sleep(50)}
+    return evaluate(`(()=>{const f=document.getElementById('readerFrame'),w=f.contentWindow,d=f.contentDocument;if(!d)return {accessible:false};w.scrollTo(0,d.documentElement.scrollHeight);const h=d.querySelector('header'),last=[...d.querySelectorAll('.sent')].at(-1),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {accessible:true,noFooter:!d.querySelector('footer,#prev,#next,#pos'),inViewport:lr.bottom<=w.innerHeight+1,belowHeader:lr.top>=hr.bottom-1,viewport:w.innerHeight,lastBottom:lr.bottom}})()`);
+  };
+  await send('Emulation.setDeviceMetricsOverride',{width:1280,height:900,deviceScaleFactor:1,mobile:false});
+  const embeddedDesktop=await embeddedCheck();
+  test('iframe桌面末行可见且无底部控件',embeddedDesktop.accessible&&embeddedDesktop.noFooter&&embeddedDesktop.inViewport&&embeddedDesktop.belowHeader,embeddedDesktop);
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  const embeddedMobile=await embeddedCheck();
+  test('iframe手机末行可见且无横向溢出',embeddedMobile.accessible&&embeddedMobile.noFooter&&embeddedMobile.inViewport&&embeddedMobile.belowHeader,embeddedMobile);
   test('全程无浏览器脚本异常',errors.length===0,errors);
 }catch(e){test('浏览器测试执行',false,{message:e.message,stack:e.stack});process.exitCode=1}
 finally{

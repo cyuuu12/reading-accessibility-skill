@@ -20,6 +20,7 @@ def load(name, path):
 acs = load('acs', os.path.join(SCRIPTS, 'acs.py'))
 fidelity = load('fidelity', os.path.join(SCRIPTS, 'fidelity_check.py'))
 builder = load('builder', os.path.join(SCRIPTS, 'build_reader.py'))
+markdown_builder = load('markdown_builder', os.path.join(SCRIPTS, 'build_markdown.py'))
 analyzer = load('analyzer', os.path.join(SCRIPTS, 'analyze.py'))
 
 PASS=0; FAIL=0; RESULTS=[]
@@ -37,6 +38,7 @@ SKILL_MD = read(os.path.join(SKILL,'SKILL.md'))
 README = read(os.path.join(SKILL,'README.md'))
 ROUTING = read(os.path.join(SKILL,'references','routing.md'))
 TRANSFORMS = read(os.path.join(SKILL,'references','transforms.md'))
+READER_DOC = read(os.path.join(SKILL,'references','reader.md'))
 ATTN = read(os.path.join(SKILL,'references','attention_model.md'))
 HTML_TPL = read(os.path.join(SKILL,'assets','reader_template.html'))
 
@@ -83,12 +85,12 @@ if fm_match:
     test("frontmatter 不堆关键词(无重复 reading-access)", fm.count('reading-access')<=1, "≤1", str(fm.count('reading-access')))
 
 # ========== 3. V2.3 SKILL.md 语义分析声明 ==========
-test("SKILL.md 含V2.3", "V2.3" in SKILL_MD, "有", "已检查")
+test("SKILL.md 含V4.0", "V4.0" in SKILL_MD, "有", "已检查")
 test("SKILL.md 声明Agent做语义分析", "第一步语义分析由你（模型）完成" in SKILL_MD, "有声明", "已检查")
 test("SKILL.md 禁止关键词代替", "不得用关键词规则或脚本代替" in SKILL_MD, "有禁止", "已检查")
 
 # ========== 4. routing.md V2.3 ==========
-test("路由含V3.2.5", "V3.2.5" in ROUTING, "有", "已检查")
+test("路由含V4.0", "V4.0" in ROUTING, "有", "已检查")
 test("路由三层分工", "Agent" in ROUTING and "Python" in ROUTING and "HTML" in ROUTING, "三层", "已检查")
 test("路由Agent schema", "para_idx" in ROUTING and "priority" in ROUTING, "有schema", "已检查")
 test("路由三硬约束", "精确定位" in ROUTING and "不重叠" in ROUTING and "无遗漏" in ROUTING, "三约束", "已检查")
@@ -97,11 +99,11 @@ test("路由语义块非逐句", "语义块" in ROUTING and "非逐句" in ROUTI
 test("路由60%强制复核", "60%" in ROUTING and "blocked_pending_agent_review" in ROUTING, "复核", "已检查")
 test("路由精读速览跳读", all(t in ROUTING for t in ["精读","速览","跳读"]), "三行为", "已检查")
 test("路由去标签视觉分层", "无标签" in ROUTING or "去标签" in ROUTING, "有", "已检查")
-test("路由减淡用颜色变量", "颜色变量" in ROUTING or "--fg-dim" in ROUTING, "有", "已检查")
+test("reader规范减淡用颜色变量", "颜色变量" in READER_DOC or "--fg-dim" in READER_DOC, "有", "已检查")
 test("路由高风险默认全文可见", "全文可见" in ROUTING and "药品说明书" in ROUTING, "高风险", "已检查")
 
 # ========== 5. transforms V2.3 ==========
-test("transforms 含V3.2.5", "V3.2.5" in TRANSFORMS, "有", "已检查")
+test("transforms 含V4.0", "V4.0" in TRANSFORMS, "有", "已检查")
 test("transforms 语义块", "语义块" in TRANSFORMS, "有", "已检查")
 test("transforms 动态软约束", "动态" in TRANSFORMS, "动态", "已检查")
 
@@ -389,13 +391,33 @@ test("V3.2.4·空白/Esc取消聚焦入口存在", "root.addEventListener('click
 
 # ========== 21. V3.2.5 交互修复与排版 ==========
 test("V3.2.5·无模式按钮与旧模式逻辑", 'modeBtn' not in html and "state.mode" not in html.replace("delete savedState.mode",""), "无", "ok")
-test("V3.2.5·底部间距动态计算", '--bottom-gap:calc(78px + env(safe-area-inset-bottom,0px))' in html and 'padding:18px 14px var(--bottom-gap)' in html and 'ResizeObserver' in html and 'readerFooter' in html, "动态", "ok")
-test("V3.2.5·焦点安全视口定位", 'scrollIntoView' not in html and 'safeTop=headerEl.getBoundingClientRect().bottom+8' in html and 'safeBottom=footerEl.getBoundingClientRect().top-8' in html, "安全视口", "ok")
+test("V4.0·正常底部留白且仅观察header", '--bottom-gap:calc(32px + env(safe-area-inset-bottom,0px))' in html and 'padding:18px 14px var(--bottom-gap)' in html and 'ResizeObserver' in html and '.observe(headerEl)' in html and '.observe(footerEl)' not in html and 'footerEl' not in html, "32px+safe-area", "ok")
+test("V4.0·顶部与真实视口安全定位", 'scrollIntoView' not in html and 'safeTop=headerEl.getBoundingClientRect().bottom+8' in html and 'safeBottom=window.innerHeight-8' in html, "安全视口", "ok")
 test("V3.2.5·空白点击文字命中判定", 'ev.target!==root' not in html and 'caretTextPos' in html and 'charRectAt' in html and 'pointInRects' in html and 'caretRangeFromPoint' in html and 'caretPositionFromPoint' in html, "有", "ok")
 test("V3.2.5·交互控件不清除聚焦", ".heading,summary,button,select,input,textarea,a,label,[data-control]" in html, "有", "ok")
 test("V3.2.5·原文focus-active减淡", 'body.focus-active #original-full{color:var(--fg-dim)}' in html and 'body.focus-active #original-full .sent.active{color:var(--fg)}' in html, "有", "ok")
 test("V3.2.5·统一正文列宽", '--body-max-width:36em' in html and '.block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width)' in html and '.region[data-pri="速览"] .block{max-width:36em' not in html, "统一", "ok")
-test("V3.2.5·文档更新V3.2.5", "V3.2.5" in SKILL_MD and "V3.2.5" in README and "V3.2.5" in ROUTING and "V3.2.5" in TRANSFORMS, "有", "ok")
+test("V4.0·文档与reader规范更新", all("V4.0" in doc for doc in [SKILL_MD,README,ROUTING,TRANSFORMS,READER_DOC]), "有", "ok")
+
+# ========== 22. V4.0 双输出与无底部导航 ==========
+test("V4.0·无footer及上下句遗留控件", all(x not in html for x in ['<footer','readerFooter','footerEl',"getElementById('prev')","getElementById('next')","getElementById('pos')",'id="prev"','id="next"','id="pos"']), "全部移除", "ok")
+test("V4.0·键盘直接调用moveFocus", "e.key==='ArrowRight')moveFocus(1)" in html and "e.key==='ArrowLeft')moveFocus(-1)" in html, "直接调用", "ok")
+test("V4.0·进度更新不访问pos", 'function updateProgress()' in html and 'updatePos' not in html, "仅顶部进度", "ok")
+test("V4.0·输出路由明确Markdown优先", '用户明确要求 Markdown' in SKILL_MD and '用户明确选择优先' in SKILL_MD, "明确", "ok")
+test("V4.0·日常不自动运行开发测试", '不启动 Chrome、CDP、截图或完整回归测试' in SKILL_MD and '开发测试路径（仅用户明确要求）' in SKILL_MD, "有分流", "ok")
+
+shared_before = json.dumps(data, ensure_ascii=False, sort_keys=True)
+shared_md = markdown_builder.render_markdown(data)
+shared_html = builder.inject(HTML_TPL, data)
+test("V4.0·双输出共用数据且不修改", json.dumps(data, ensure_ascii=False, sort_keys=True)==shared_before and 'const DATA=' in shared_html, "同源", "ok")
+md_body = shared_md.split('## 辅助阅读正文',1)[1].strip()
+md_plain = re.sub(r'(?m)^#{1,6}\s+', '', md_body).replace('**','').strip()
+test("V4.0·Markdown正文去标记后逐字一致", md_plain==TEST_TEXT.strip(), "逐字一致", f"len={len(md_plain)}")
+test("V4.0·Markdown保留emphasis", '**语义翻译和交际翻译**' in shared_md, "局部加粗", "ok")
+test("V4.0·Markdown标题层级", markdown_builder.render_segment({'original':'文档主标题','blocks':[{'text':'文档主标题','heading_level':0}]})=='# 文档主标题', "h1", "ok")
+test("V4.0·Markdown不模拟HTML控件", all(x not in shared_md for x in ['<details','<summary','id="prev"','id="next"','高亮：']), "无控件", "ok")
+markdown_source = read(os.path.join(SCRIPTS,'build_markdown.py'))
+test("V4.0·Markdown构建不重新语义分析", 'route_text(' not in markdown_source and 'import analyze' not in markdown_source, "无二次分析", "ok")
 
 # ========== 输出 ==========
 print("="*60)

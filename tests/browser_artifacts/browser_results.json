@@ -1,13 +1,18 @@
 {
   "browser": "Chrome headless (CDP)",
-  "timestamp": "2026-11-26T03:23:47.084Z",
-  "passed": 64,
+  "timestamp": "2026-11-26T08:44:36.188Z",
+  "passed": 67,
   "failed": 0,
   "results": [
     {
       "name": "浏览器无脚本异常",
       "status": "通过",
       "detail": []
+    },
+    {
+      "name": "V4.0无footer及上下句遗留控件",
+      "status": "通过",
+      "detail": ""
     },
     {
       "name": "精读暖底/3-4px边框计算样式生效",
@@ -745,16 +750,18 @@
       }
     },
     {
-      "name": "桌面长文最后一个字完整可见且不被footer遮挡",
+      "name": "桌面长文最后一个字完整可见且留白适度",
       "status": "通过",
       "detail": {
         "desktopScroll": {
-          "gap": "69px",
-          "footerH": 61,
-          "aboveFooter": true,
+          "gap": "calc(32px + 0px)",
+          "mainPadding": "32px",
+          "inViewport": true,
           "belowHeader": true,
           "right": true,
-          "text": "十像素留白。"
+          "viewport": 900,
+          "lastBottom": 827,
+          "text": "固定导航栏。"
         }
       }
     },
@@ -764,7 +771,7 @@
       "detail": {
         "cur": 47,
         "total": 48,
-        "aboveFooter": true,
+        "inViewport": true,
         "belowHeader": true
       }
     },
@@ -780,12 +787,14 @@
       "name": "390px长文末行完整可见且无横向滚动",
       "status": "通过",
       "detail": {
-        "gap": "69px",
-        "footerH": 61,
-        "aboveFooter": true,
+        "gap": "calc(32px + 0px)",
+        "mainPadding": "32px",
+        "inViewport": true,
         "belowHeader": true,
         "right": true,
-        "text": "十像素留白。"
+        "viewport": 844,
+        "lastBottom": 771,
+        "text": "固定导航栏。"
       }
     },
     {
@@ -794,7 +803,7 @@
       "detail": {
         "cur": 47,
         "total": 48,
-        "aboveFooter": true,
+        "inViewport": true,
         "belowHeader": true
       }
     },
@@ -813,6 +822,30 @@
       "detail": {
         "mobileFocused": true,
         "mobileCleared": true
+      }
+    },
+    {
+      "name": "iframe桌面末行可见且无底部控件",
+      "status": "通过",
+      "detail": {
+        "accessible": true,
+        "noFooter": true,
+        "inViewport": true,
+        "belowHeader": true,
+        "viewport": 900,
+        "lastBottom": 827
+      }
+    },
+    {
+      "name": "iframe手机末行可见且无横向溢出",
+      "status": "通过",
+      "detail": {
+        "accessible": true,
+        "noFooter": true,
+        "inViewport": true,
+        "belowHeader": true,
+        "viewport": 844,
+        "lastBottom": 771
       }
     },
     {

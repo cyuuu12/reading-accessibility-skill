@@ -1,8 +1,8 @@
-# 阅读辅助 Skill（Reading Accessibility）V3.2.5
+# 阅读辅助 Skill（Reading Accessibility）V4.0
 
 面向“阅读困难”的文本辅助工具（非医学诊断）。Agent 负责全文语义分析与阅读策略，Python 负责切分、校验、保真、统计与复核状态，HTML 只负责呈现与交互。
 
-V3.2.5 修复滚动遮挡、空白取消聚焦、原文减淡覆盖与正文行宽不一致，并删除无实质差异的三模式按钮。保留 V3.2.4 的块级统计、复核、标题层级、emphasis、原文逐字恢复、三主题与移动端能力。
+V4.0 精简日常入口与按需参考文件，Markdown/HTML 共用一次 `route_text()` 结构化结果，并彻底移除固定底部导航及关联计算。保留 V3.2.x 的语义规则、复核、标题层级、emphasis、原文逐字恢复、三主题与移动端能力。
 
 ## 阅读策略与统计
 
@@ -46,9 +46,9 @@ V3.2.5 修复滚动遮挡、空白取消聚焦、原文减淡覆盖与正文行�
 ```text
 reading_accessibility/
 ├── SKILL.md
-├── references/   attention_model.md · transforms.md · routing.md
+├── references/   routing.md（语义）· transforms.md（变换/Markdown）· reader.md（HTML）· attention_model.md（ACS 调试）
 ├── assets/       attention_map_template.md · focus_version_template.md · reader_template.html
-├── scripts/      acs.py · analyze.py · fidelity_check.py · build_reader.py
+├── scripts/      acs.py · analyze.py · fidelity_check.py · build_reader.py · build_markdown.py
 └── tests/
     ├── run_tests.py                    # 零依赖静态/数据测试
     ├── browser_test.mjs                # Node + Chrome CDP 真实交互测试
@@ -68,19 +68,18 @@ reading_accessibility/
 python scripts/acs.py input.txt
 python scripts/fidelity_check.py original.txt rewritten.txt
 python scripts/analyze.py input.txt analysis.json
-python scripts/build_reader.py --from-text input.txt output.html analysis.json
+python scripts/analyze.py input.txt analysis.json > route_data.json
+python scripts/build_markdown.py route_data.json output.md
+python scripts/build_reader.py route_data.json output.html
 python tests/run_tests.py
 node tests/browser_test.mjs   # 需本机 Chrome/Edge；可用 CHROME_PATH 指定
 ```
 
 浏览器测试使用 Node 内置 WebSocket 和 Chrome DevTools Protocol，不依赖 Playwright、Selenium 或 npm 第三方包。它执行真实鼠标、键盘、触摸事件，读取 computed style，检查三主题对比度、标题层级、原文 diff、无残留切换、色差区间和 390px 移动端布局，并输出截图。
 
-## 验证结果
+## 验证与开发路径
 
-- 静态/数据自动化：**163 通过 / 0 失败**。
-- 真实 Chrome：**59 通过 / 0 失败**，结果见 `tests/browser_artifacts/browser_results.json`。
-- 色差样式记录与局部截图：`tests/browser_artifacts/color_case_styles.json`、`04-color-case-light.png`、`05-color-case-dark.png`、`06-color-case-sepia.png`。
-- Markdown 保持轻量方案，不模拟复杂交互，不承载三级标签。
+V4.0 验收结果见 `tests/V400_FIX_REPORT.md`。日常阅读不自动运行测试；只有用户明确要求开发验收时才执行完整静态测试、浏览器交互和截图。Markdown 是正式轻量输出，HTML 是交互输出，两者共用一次分析数据。
 
 ## 边界
 

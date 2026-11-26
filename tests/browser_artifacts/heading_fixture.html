@@ -12,7 +12,7 @@
     --hl-bg:#fff3cd; --hl-border:#a87500; --control-bg:#f6f8fa;
     --reader-font-size:18px; --reader-line-height:1.7;
     --body-max-width:36em; --header-height:64px;
-    --bottom-gap:calc(78px + env(safe-area-inset-bottom,0px));
+    --bottom-gap:calc(32px + env(safe-area-inset-bottom,0px));
   }
   [data-theme="dark"]{
     --bg:#1e1e1e; --fg:#e6e6e6; --fg-dim:#a3a3a3; --muted:#aaa; --accent:#82bfff;
@@ -84,8 +84,6 @@
   .skip-fold .block{background:transparent}
   .origtext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--reader-font-size);line-height:var(--reader-line-height);max-width:none;font-weight:400;background:transparent}
   #original-full,#original-full .original-block{margin:0;padding:0;border:0;border-radius:0;box-shadow:none;color:var(--fg);background:transparent;font:inherit;font-weight:400;text-decoration:none}
-  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 14px max(8px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;font-size:.82em;color:var(--muted);z-index:10}
-  footer button{font-size:.85em;min-height:44px;min-width:44px;padding:6px 14px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer}
   @media(max-width:600px){main{padding:14px 10px var(--bottom-gap)}.toolbar{gap:4px}.toolbar label{font-size:.75em}.skip-fold>summary{flex-wrap:wrap;gap:2px 8px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
@@ -102,19 +100,14 @@
     <button class="tbtn" id="expandAll">全部展开</button>
     <div class="spacer"></div>
     <div class="progress"><div id="pbar"></div></div>
-    <div class="help">开启高亮后点句聚焦；← → 切换可见上下句。</div>
+    <div class="help">开启高亮后点句聚焦；桌面端可用 ← → 切换可见上下句。</div>
   </div>
 </header>
 <main id="root"></main>
-<footer id="readerFooter">
-  <span id="pos">未开始</span>
-  <span><button id="prev">← 上一句</button> <button id="next">下一句 →</button></span>
-</footer>
 <script>
 const DATA={"title":"标题层级测试","mode":"聚焦阅读","segments":[{"seg_no":1,"original":"文档主标题","sentences":["文档主标题"],"blocks":[{"text":"文档主标题","role":"标题","heading_level":0,"priority":null,"sentences":["文档主标题"],"preview":null}]},{"seg_no":2,"original":"一级章节","sentences":["一级章节"],"blocks":[{"text":"一级章节","role":"标题","heading_level":1,"priority":null,"sentences":["一级章节"],"preview":null}]},{"seg_no":3,"original":"二级章节","sentences":["二级章节"],"blocks":[{"text":"二级章节","role":"标题","heading_level":2,"priority":null,"sentences":["二级章节"],"preview":null}]},{"seg_no":4,"original":"正文一句。","sentences":["正文一句。"],"blocks":[{"text":"正文一句。","role":"核心论点","priority":"精读","sentences":["正文一句。"],"preview":null}]}],"original_text":"文档主标题\n\n一级章节\n\n二级章节\n\n正文一句。","conservative":false};
 const root=document.getElementById('root');
 const headerEl=document.querySelector('header');
-const footerEl=document.getElementById('readerFooter');
 const LS_KEY='reading-accessibility-v232';
 const savedState=loadLS();
 delete savedState.mode;
@@ -129,10 +122,7 @@ function saveLS(){try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh
 function hasFoldable(){return entries.some(e=>e.block.priority==='跳读')}
 function updateScrollInsets(){
   document.documentElement.style.setProperty('--header-height',Math.ceil(headerEl.getBoundingClientRect().height)+'px');
-  const gap=Math.ceil(footerEl.getBoundingClientRect().height)+8;
-  document.documentElement.style.setProperty('--bottom-gap',gap+'px');
 }
-new ResizeObserver(updateScrollInsets).observe(footerEl);
 new ResizeObserver(updateScrollInsets).observe(headerEl);
 window.addEventListener('resize',updateScrollInsets);
 window.addEventListener('orientationchange',()=>setTimeout(updateScrollInsets,120));
@@ -251,7 +241,7 @@ function render(){
   root.innerHTML='';sents=[];
   if(state.view==='original')renderOriginal();else renderAssisted();
   state.cur=focusKey?sents.findIndex(x=>x.key===focusKey&&visible(x.el)):-1;
-  applyFocus();updatePos();applySettings();restorePosition(pos);
+  applyFocus();updateProgress();applySettings();restorePosition(pos);
 }
 function applyFocus(){
   document.querySelectorAll('.block,.original-block').forEach(b=>b.classList.remove('dimmed'));document.querySelectorAll('.sent.active').forEach(s=>s.classList.remove('active'));
@@ -259,28 +249,26 @@ function applyFocus(){
   document.body.classList.toggle('focus-active',!!active);
   if(active){const current=sents[state.cur];current.el.classList.add('active');document.querySelectorAll('.block,.original-block').forEach(b=>{if(b!==current.blockEl)b.classList.add('dimmed')})}
 }
-function clearFocus(){state.cur=-1;applyFocus();updatePos();saveLS()}
+function clearFocus(){state.cur=-1;applyFocus();updateProgress();saveLS()}
 function focusAt(i){
   if(!state.hl||i<0||i>=sents.length||!visible(sents[i].el))return;
   state.cur=i;
   const el=sents[i].el,rect=el.getBoundingClientRect();
   const safeTop=headerEl.getBoundingClientRect().bottom+8;
-  const safeBottom=footerEl.getBoundingClientRect().top-8;
+  const safeBottom=window.innerHeight-8;
   const space=safeBottom-safeTop;
   if(space>0&&(rect.top<safeTop||rect.bottom>safeBottom)){
     const targetTop=Math.max(safeTop,Math.min(safeBottom-Math.min(rect.height,space),(safeTop+safeBottom-rect.height)/2));
     window.scrollBy({top:rect.top-targetTop,behavior:'smooth'});
   }
-  applyFocus();updatePos();saveLS();
+  applyFocus();updateProgress();saveLS();
 }
-function updatePos(){
+function updateProgress(){
   document.getElementById('pbar').style.width=(sents.length?((state.cur+1)/sents.length*100):0)+'%';
-  document.getElementById('pos').textContent=state.cur>=0&&sents[state.cur]?'段 '+sents[state.cur].segNo+' · 第 '+(state.cur+1)+'/'+sents.length+' 句':'未开始';
 }
 function moveFocus(step){for(let i=state.cur+step;i>=0&&i<sents.length;i+=step){if(visible(sents[i].el)){focusAt(i);return}}}
-document.getElementById('next').addEventListener('click',()=>moveFocus(1));document.getElementById('prev').addEventListener('click',()=>moveFocus(-1));
-document.addEventListener('keydown',e=>{if(e.target.tagName==='SELECT')return;if(e.key==='Escape'){if(state.cur>=0)clearFocus();return}if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click()});
-document.querySelectorAll('header button,header select,footer button').forEach(el=>el.setAttribute('data-control','true'));
+document.addEventListener('keydown',e=>{if(['SELECT','INPUT','TEXTAREA'].includes(e.target.tagName)||e.target.isContentEditable)return;if(e.key==='Escape'){if(state.cur>=0)clearFocus();return}if(e.key==='ArrowRight')moveFocus(1);if(e.key==='ArrowLeft')moveFocus(-1)});
+document.querySelectorAll('header button,header select').forEach(el=>el.setAttribute('data-control','true'));
 function sentenceIndexAt(x,y){
   let pos=null;
   if(document.caretRangeFromPoint)pos=document.caretRangeFromPoint(x,y);
