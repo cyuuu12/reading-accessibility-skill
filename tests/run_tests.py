@@ -4,7 +4,8 @@
 run_tests.py — Reading Accessibility Skill V3.2.4 测试（零依赖）
 覆盖：触发、frontmatter、Agent语义分析schema、语义块切分、保守模式、
       诊断不阻断、HTML视觉分层、聚焦减淡(颜色变量)、速览可见、跳读预览、
-      原文完整性、保真、中英混排、三模式差异、Merriam-Webster误判防护、回归。
+      诊断不阻断、HTML视觉分层、聚焦减淡(颜色变量)、速览可见、跳读预览、
+      原文完整性、保真、中英混排、统一视图、Merriam-Webster误判防护、回归。
 """
 import os, sys, json, re, importlib.util
 
@@ -33,6 +34,7 @@ def read(p):
     with open(p,'r',encoding='utf-8') as f: return f.read()
 
 SKILL_MD = read(os.path.join(SKILL,'SKILL.md'))
+README = read(os.path.join(SKILL,'README.md'))
 ROUTING = read(os.path.join(SKILL,'references','routing.md'))
 TRANSFORMS = read(os.path.join(SKILL,'references','transforms.md'))
 ATTN = read(os.path.join(SKILL,'references','attention_model.md'))
@@ -86,7 +88,7 @@ test("SKILL.md 声明Agent做语义分析", "第一步语义分析由你（模�
 test("SKILL.md 禁止关键词代替", "不得用关键词规则或脚本代替" in SKILL_MD, "有禁止", "已检查")
 
 # ========== 4. routing.md V2.3 ==========
-test("路由含V3.2.4", "V3.2.4" in ROUTING, "有", "已检查")
+test("路由含V3.2.5", "V3.2.5" in ROUTING, "有", "已检查")
 test("路由三层分工", "Agent" in ROUTING and "Python" in ROUTING and "HTML" in ROUTING, "三层", "已检查")
 test("路由Agent schema", "para_idx" in ROUTING and "priority" in ROUTING, "有schema", "已检查")
 test("路由三硬约束", "精确定位" in ROUTING and "不重叠" in ROUTING and "无遗漏" in ROUTING, "三约束", "已检查")
@@ -96,10 +98,10 @@ test("路由60%强制复核", "60%" in ROUTING and "blocked_pending_agent_review
 test("路由精读速览跳读", all(t in ROUTING for t in ["精读","速览","跳读"]), "三行为", "已检查")
 test("路由去标签视觉分层", "无标签" in ROUTING or "去标签" in ROUTING, "有", "已检查")
 test("路由减淡用颜色变量", "颜色变量" in ROUTING or "--fg-dim" in ROUTING, "有", "已检查")
-test("路由高风险默认完整", "完整阅读" in ROUTING and "药品说明书" in ROUTING, "高风险", "已检查")
+test("路由高风险默认全文可见", "全文可见" in ROUTING and "药品说明书" in ROUTING, "高风险", "已检查")
 
 # ========== 5. transforms V2.3 ==========
-test("transforms 含V2.3", "V2.3" in TRANSFORMS, "有", "已检查")
+test("transforms 含V3.2.5", "V3.2.5" in TRANSFORMS, "有", "已检查")
 test("transforms 语义块", "语义块" in TRANSFORMS, "有", "已检查")
 test("transforms 动态软约束", "动态" in TRANSFORMS, "动态", "已检查")
 
@@ -186,7 +188,7 @@ test("HTML 含 <html>", '<html' in html and '</html>' in html, "完整", "ok")
 test("HTML 已注入数据", '__READER_DATA__' not in html, "已替换", "ok")
 test("HTML 高亮开关 hlBtn", 'hlBtn' in html and '高亮' in html, "高亮开关", "ok")
 test("HTML 高亮默认关", "hl:false" in html or "hl:!1" in html, "默认关", "ok")
-test("HTML 模式按钮三模式", '完整阅读' in html and '聚焦阅读' in html and '快速浏览' in html, "三模式", "ok")
+test("HTML 无三模式按钮", 'modeBtn' not in html and "state.mode" not in html.replace("delete savedState.mode",""), "已删除", "ok")
 test("HTML 全部展开按钮", 'expandAll' in html and '全部展开' in html, "有", "ok")
 test("HTML 字号变量 --reader-font-size", '--reader-font-size' in html, "有", "ok")
 test("HTML 行距变量 --reader-line-height", '--reader-line-height' in html, "有", "ok")
@@ -203,7 +205,7 @@ test("HTML 减淡不用opacity", 'opacity:.85' not in html and 'opacity: .85' no
 test("HTML 精读橙红边--focus-border", '--focus-border' in html, "有", "ok")
 test("HTML 跳读折叠.skip-fold", 'skip-fold' in html, "有", "ok")
 test("HTML 跳读无填充", '--skip-bg' not in html and 'background:transparent;border-left:2px dashed var(--skip-border)' in html, "无灰底", "ok")
-test("HTML 跳读展开正文无填充", '.region[data-pri="跳读"] .block{background:transparent}' in html and '.skip-fold .block{background:transparent}' in html, "无", "ok")
+test("HTML 跳读展开正文无填充", '.skip-fold .block{padding-left:11px;background:transparent}' in html, "无", "ok")
 test("HTML 跳读预览.skip-preview", 'skip-preview' in html, "有", "ok")
 test("HTML 语义块.block", 'block' in html and 'data-pri' in html, "有", "ok")
 test("HTML 无旧标签重点读", '重点读' not in html, "无", "ok")
@@ -216,30 +218,14 @@ test("HTML 导航跳过不可见", 'details:not([open])' in html and 'visible(' 
 test("HTML prefers-reduced-motion", "prefers-reduced-motion" in html, "有", "ok")
 test("HTML 保守模式渲染", 'conservative' in html or 'DATA.conservative' in html, "有", "ok")
 
-# ========== 13. 三模式差异 ==========
-# 完整阅读：跳读不折叠
-# 聚焦阅读：跳读折叠
-# 快速浏览：速览减淡，跳读折叠
-data_full = builder.build_data_from_text(TEST_TEXT, analysis=analysis)
-data_full['mode'] = '完整阅读'
-html_full = builder.inject(HTML_TPL, data_full)
-data_focus = builder.build_data_from_text(TEST_TEXT, analysis=analysis)
-data_focus['mode'] = '聚焦阅读'
-html_focus = builder.inject(HTML_TPL, data_focus)
-data_quick = builder.build_data_from_text(TEST_TEXT, analysis=analysis)
-data_quick['mode'] = '快速浏览'
-html_quick = builder.inject(HTML_TPL, data_quick)
-# 三模式 HTML 应有差异（mode 不同导致 JS 行为不同）
-test("三模式·HTML有差异", html_full != html_focus or html_focus != html_quick, "有差异", "ok")
-# 跳读块存在
-has_skip = any(b['priority']=='跳读' for s in data_full['segments'] for b in s.get('blocks',[]))
-test("三模式·有跳读块", has_skip, "有", str(has_skip))
-# 速览块存在
-has_skim = any(b['priority']=='速览' for s in data_full['segments'] for b in s.get('blocks',[]))
-test("三模式·有速览块", has_skim, "有", str(has_skim))
-# 精读块存在
-has_focus = any(b['priority']=='精读' for s in data_full['segments'] for b in s.get('blocks',[]))
-test("三模式·有精读块", has_focus, "有", str(has_focus))
+# ========== 13. 统一辅助视图 ==========
+# 辅助视图默认按 Agent 策略呈现：精读/速览可见，跳读折叠；原文视图逐字还原。
+has_skip = any(b['priority']=='跳读' for s in data['segments'] for b in s.get('blocks',[]))
+test("统一视图·有跳读块", has_skip, "有", str(has_skip))
+has_skim = any(b['priority']=='速览' for s in data['segments'] for b in s.get('blocks',[]))
+test("统一视图·有速览块", has_skim, "有", str(has_skim))
+has_focus = any(b['priority']=='精读' for s in data['segments'] for b in s.get('blocks',[]))
+test("统一视图·有精读块", has_focus, "有", str(has_focus))
 
 # ========== 14. 保真 ==========
 IDENT="每日剂量不得超过40mg。若出现皮疹应立即停药。"
@@ -320,7 +306,7 @@ test("HTML·精读统一暖色填充", '#FFF2E9' in html and '--focus-fill:' in 
 test("HTML·深色高亮暖褐", '#5A4718' in html, "有", "ok")
 test("HTML·长区域填充不衰减", 'depth-' not in HTML_TPL and 'depthFor' not in HTML_TPL and 'focus-fill-1' not in HTML_TPL, "无衰减", "ok")
 test("HTML·区域起点10px间隙", 'margin:10px 0 18px' in html, "10px", "ok")
-test("HTML·速览基准字重", 'font-weight:400' in html and 'max-width:36em' in html, "有", "ok")
+test("HTML·统一正文行宽", '--body-max-width:36em' in html and '.block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width)' in html and '.region[data-pri="速览"] .block{max-width:36em' not in html, "36em", "ok")
 test("HTML·跨行高亮连续", 'box-decoration-break:clone' in html, "有", "ok")
 test("HTML·原文清除全部辅助视觉", '#original-full .original-block' in html and 'font-weight:400' in html and 'box-shadow:none' in html, "有", "ok")
 test("HTML·强调安全文本节点", 'appendEmphasized' in html and 'createTextNode' in html, "有", "ok")
@@ -401,9 +387,19 @@ test("V3.2.4·标题不走region视觉区", "if(isHeading(entries[i])){root.appe
 test("V3.2.4·原文视图可逐句聚焦", 'appendOriginalSentences' in html and "state.view!=='original'" not in html and "e.key==='Escape'" in html, "支持", "ok")
 test("V3.2.4·空白/Esc取消聚焦入口存在", "root.addEventListener('click'" in html and "clearFocus()" in html and "[data-control]" in html, "有", "ok")
 
+# ========== 21. V3.2.5 交互修复与排版 ==========
+test("V3.2.5·无模式按钮与旧模式逻辑", 'modeBtn' not in html and "state.mode" not in html.replace("delete savedState.mode",""), "无", "ok")
+test("V3.2.5·底部间距动态计算", '--bottom-gap:calc(78px + env(safe-area-inset-bottom,0px))' in html and 'padding:18px 14px var(--bottom-gap)' in html and 'ResizeObserver' in html and 'readerFooter' in html, "动态", "ok")
+test("V3.2.5·焦点安全视口定位", 'scrollIntoView' not in html and 'safeTop=headerEl.getBoundingClientRect().bottom+8' in html and 'safeBottom=footerEl.getBoundingClientRect().top-8' in html, "安全视口", "ok")
+test("V3.2.5·空白点击文字命中判定", 'ev.target!==root' not in html and 'caretTextPos' in html and 'charRectAt' in html and 'pointInRects' in html and 'caretRangeFromPoint' in html and 'caretPositionFromPoint' in html, "有", "ok")
+test("V3.2.5·交互控件不清除聚焦", ".heading,summary,button,select,input,textarea,a,label,[data-control]" in html, "有", "ok")
+test("V3.2.5·原文focus-active减淡", 'body.focus-active #original-full{color:var(--fg-dim)}' in html and 'body.focus-active #original-full .sent.active{color:var(--fg)}' in html, "有", "ok")
+test("V3.2.5·统一正文列宽", '--body-max-width:36em' in html and '.block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width)' in html and '.region[data-pri="速览"] .block{max-width:36em' not in html, "统一", "ok")
+test("V3.2.5·文档更新V3.2.5", "V3.2.5" in SKILL_MD and "V3.2.5" in README and "V3.2.5" in ROUTING and "V3.2.5" in TRANSFORMS, "有", "ok")
+
 # ========== 输出 ==========
 print("="*60)
-print("Reading Accessibility Skill V3.2.4 测试报告")
+print("Reading Accessibility Skill V3.2.5 测试报告")
 print("="*60)
 for name,status,exp,act in RESULTS:
     print(f"[{status}] {name}")

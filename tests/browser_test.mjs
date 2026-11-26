@@ -86,7 +86,10 @@ try{
   await click('#expandAll');
   test('恢复折叠与按钮状态一致',await evaluate(`[...document.querySelectorAll('.skip-fold')].every(x=>!x.open)&&document.getElementById('expandAll').textContent==='全部展开'`));
 
-  await click('#hlBtn');await click('.sent',0);
+  await click('#hlBtn');
+  const sentPoint=await evaluate(`(()=>{const idx=sents.findIndex(x=>{const r=x.el.getBoundingClientRect();return visible(x.el)&&r.top>headerEl.getBoundingClientRect().bottom+4&&r.bottom<footerEl.getBoundingClientRect().top-4});if(idx<0)return null;const r=sents[idx].el.getBoundingClientRect();return {idx,x:r.left+r.width/2,y:r.top+r.height/2}})()`);
+  if(!sentPoint)throw new Error('未找到安全视口内句子');
+  await clickAt(sentPoint.x,sentPoint.y);
   const focusLight=await evaluate(`(()=>{const a=document.querySelector('.sent.active'),cur=a.closest('.block'),dim=document.querySelector('.block.dimmed');return {activeBg:getComputedStyle(a).backgroundColor,currentBg:getComputedStyle(cur).backgroundColor,dimColor:getComputedStyle(dim).color,dimmed:document.querySelectorAll('.block.dimmed').length,cur:state.cur}})()`);
   test('点句聚焦且静态块填充让位',focusLight.activeBg==='rgb(255, 243, 205)'&&focusLight.currentBg==='rgba(0, 0, 0, 0)',focusLight);
   test('其他语义块明显减淡',focusLight.dimmed>0&&focusLight.dimColor==='rgb(95, 95, 95)',focusLight);
@@ -97,13 +100,13 @@ try{
   const rootRect=await evaluate(`(()=>{const r=root.getBoundingClientRect();return {x:r.right-7,y:Math.min(r.bottom-20,window.innerHeight-120),target:null}})()`);
   await clickAt(rootRect.x,rootRect.y);
   test('真实空白点击清除聚焦但保留高亮功能',await evaluate('({cur:state.cur,hl:state.hl,focusActive:document.body.classList.contains("focus-active"),active:document.querySelectorAll(".sent.active,.block.dimmed").length})').then(x=>x.cur===-1&&x.hl===true&&x.focusActive===false&&x.active===0));
-  await click('.sent',0);
+  await click('.sent',sentPoint.idx);
   test('空白取消后可立即重新聚焦',await evaluate('state.cur')===focusLight.cur);
   const settingsBefore=await evaluate('({fs:state.fs,th:state.th,mode:state.mode})');
   await key('Escape','Escape',27);
   const escState=await evaluate('({cur:state.cur,fs:state.fs,th:state.th,mode:state.mode})');
   test('Esc清除聚焦且不修改设置',escState.cur===-1&&escState.fs===settingsBefore.fs&&escState.th===settingsBefore.th&&escState.mode===settingsBefore.mode,escState);
-  await click('.sent',0);
+  await click('.sent',sentPoint.idx);
   await select('th','dark');
   const dark=await evaluate(`(()=>{const a=document.querySelector('.sent.active'),d=document.querySelector('.block.dimmed');return {bg:getComputedStyle(document.body).backgroundColor,fg:getComputedStyle(document.body).color,hl:getComputedStyle(a).backgroundColor,dim:getComputedStyle(d).color}})()`);
   test('深色高亮与页面背景有可测亮度差',dark.hl==='rgb(90, 71, 24)'&&Math.abs(lum(rgb(dark.hl))-lum(rgb(dark.bg)))>.01,dark);
@@ -112,6 +115,7 @@ try{
   await screenshot('02-dark-focus.png');
   await click('#hlBtn');
   test('关闭高亮恢复填充并清除减淡',await evaluate(`document.querySelectorAll('.sent.active,.block.dimmed').length===0&&getComputedStyle(document.querySelector('.block[data-pri="精读"]')).backgroundColor!=='rgba(0, 0, 0, 0)'`));
+  await select('th','light');
 
   // 关闭跳读后，从它之前的可见句用真实键盘向右导航。
   await click('#hlBtn');
@@ -129,21 +133,17 @@ try{
   await click('#hlBtn');
   await click('#origAll');
   await click('.original-block .sent',0);
-  const originalFocus=await evaluate(`(()=>{const o=document.getElementById('original-full');const a=document.querySelector('.sent.active');return {cur:state.cur,active:!!a,same:o.textContent===DATA.original_text,dimmed:document.querySelectorAll('.original-block.dimmed').length}})()`);
+  const originalFocus=await evaluate(`(()=>{const o=document.getElementById('original-full');const a=document.querySelector('.sent.active');return {cur:state.cur,active:!!a,same:o.textContent===DATA.original_text,dimColor:getComputedStyle(o).color,activeColor:a?getComputedStyle(a).color:null,dimmed:document.querySelectorAll('.original-block.dimmed').length}})()`);
   test('原文模式可视觉层聚焦且文本不变',originalFocus.cur>=0&&originalFocus.active&&originalFocus.same,originalFocus);
+  test('原文模式其他文字实际减淡且当前句正常',originalFocus.dimColor==='rgb(95, 95, 95)'&&originalFocus.activeColor==='rgb(26, 26, 26)'&&originalFocus.dimmed>0,originalFocus);
   await key('Escape','Escape',27);
   test('原文模式Esc清除聚焦',await evaluate('state.cur')===-1&&await evaluate('document.querySelectorAll(".sent.active,.original-block.dimmed").length')===0);
   await click('#origAll');
 
-  // 模式：快速浏览速览仍清晰；完整阅读所有跳读直接可见。
-  const readingBeforeMode=await evaluate('capturePosition()');
-  await click('#modeBtn');
-  test('模式切换保留当前阅读位置',await evaluate('capturePosition().id')===readingBeforeMode.id,readingBeforeMode);
-  test('快速浏览速览不默认减淡',await evaluate(`state.mode==='快速浏览'&&document.querySelectorAll('.block[data-pri="速览"].dimmed').length===0`));
-  await click('#modeBtn');
-  test('完整阅读一次展示全部原文',await evaluate(`state.mode==='完整阅读'&&document.querySelectorAll('.skip-fold').length===0&&document.querySelectorAll('.block[data-pri="跳读"]').length===2`));
-  await click('#modeBtn');
-  test('返回聚焦阅读跳读恢复可逆折叠',await evaluate(`state.mode==='聚焦阅读'&&document.querySelectorAll('.skip-fold').length===1`));
+  // 统一辅助视图：不再有三模式按钮；辅助/原文、高亮、折叠可独立组合。
+  const beforeUnified=await evaluate('({view:state.view,hl:state.hl,allExpanded:state.allExpanded})');
+  test('统一视图无模式按钮',await evaluate(`!document.getElementById('modeBtn')&&typeof state.mode==='undefined'&&document.querySelectorAll('.skip-fold').length===1`),beforeUnified);
+  test('统一视图默认折叠跳读且原文/高亮可用',await evaluate(`state.view==='assisted'&&document.getElementById('hlBtn')&&document.getElementById('expandAll')&&!document.getElementById('expandAll').disabled`),beforeUnified);
 
   // 标题层级 fixture：真实渲染语义化标题且无策略底色。
   const headingData={title:'标题层级测试',mode:'聚焦阅读',segments:[
@@ -182,9 +182,8 @@ try{
   colorStyles.states.afterRestore=await evaluate(`document.querySelectorAll('.sent.active,.block.dimmed').length===0&&getComputedStyle(document.querySelector('[data-block-id="${anchorIds[0]}"]')).backgroundColor===getComputedStyle(document.querySelector('[data-block-id="${anchorIds[1]}"]')).backgroundColor`);
   test('取消聚焦后色差区间背景一致恢复',colorStyles.states.afterRestore,colorStyles.states);
   const beforeModeBg=await evaluate(`getComputedStyle(document.querySelector('[data-block-id="${anchorIds[0]}"]')).backgroundColor`);
-  await click('#modeBtn');await click('#modeBtn');await click('#modeBtn');
   colorStyles.states.afterModes=await evaluate(`getComputedStyle(document.querySelector('[data-block-id="${anchorIds[0]}"]')).backgroundColor`);
-  test('模式切换不改变未聚焦同区背景',colorStyles.states.afterModes===beforeModeBg,{beforeModeBg,afterModes:colorStyles.states.afterModes});
+  test('未聚焦同区背景稳定',colorStyles.states.afterModes===beforeModeBg,{beforeModeBg,afterModes:colorStyles.states.afterModes});
   fs.writeFileSync(path.join(OUT,'color_case_styles.json'),JSON.stringify({note:'受控fixture，非原始哲学论文报告数据',anchors:anchorIds,styles:colorStyles},null,2));
   await screenshotClip('04-color-case-light.png',colorSelectors);await select('th','dark');await screenshotClip('05-color-case-dark.png',colorSelectors);await select('th','sepia');await screenshotClip('06-color-case-sepia.png',colorSelectors);
 
@@ -202,6 +201,8 @@ try{
   await click('.skip-fold summary');
   const skipOpenBg=await evaluate(`[...document.querySelectorAll('.skip-fold .block')].map(x=>getComputedStyle(x).backgroundColor)`);
   test('跳读展开后正文仍无填充',skipOpenBg.every(x=>x==='rgba(0, 0, 0, 0)'),skipOpenBg);
+  const alignment=await evaluate(`(()=>{const kinds=['精读','速览','跳读'];return kinds.map(k=>{const sel=k==='跳读'?'.skip-fold .block .sent':'.region[data-pri="'+k+'"] .block .sent';const el=document.querySelector(sel);return el?{k,left:Math.round(el.getBoundingClientRect().left),textLeft:Math.round((el.getClientRects()[0]||el.getBoundingClientRect()).left),maxWidth:getComputedStyle(el.closest('.block')).maxWidth}:null})})()`);
+  test('普通正文统一列宽且左边缘对齐',alignment.every(Boolean)&&new Set(alignment.map(x=>x.left)).size===1&&new Set(alignment.map(x=>x.maxWidth)).size===1,{alignment});
   await click('.skip-fold summary');
 
   await navigate(demo);
@@ -212,6 +213,36 @@ try{
   await select('fs','20');await select('th','sepia');
   const sepia=await evaluate(`(()=>{const b=document.querySelector('.block[data-pri="速览"]');return {size:getComputedStyle(b).fontSize,fg:getComputedStyle(b).color,bg:getComputedStyle(document.body).backgroundColor}})()`);
   test('护眼主题字号统一且对比度≥4.5:1',sepia.size==='20px'&&contrast(sepia.fg,sepia.bg)>=4.5,{...sepia,contrast:contrast(sepia.fg,sepia.bg)});
+
+  // V3.2.5 滚动验收：动态底部间距、最后一句可见、首末句聚焦不被遮挡。
+  const scrollFixture={title:'V3.2.5 滚动验收',segments:[],original_text:'',conservative:false};
+  for(let i=1;i<=48;i++){
+    const text=`滚动验收第${i}句：这一句用于确认正文底部间距、固定导航栏、动态视口和长文末行都能稳定适配，不依赖固定九十像素留白。`;
+    scrollFixture.segments.push({seg_no:i,original:text,sentences:[text],blocks:[{text,role:'核心论点',priority:i%3===0?'速览':'精读',sentences:[text],preview:null}]});
+    scrollFixture.original_text+=(scrollFixture.original_text?'\n\n':'')+text;
+  }
+  const scrollFile=path.join(OUT,'scroll_fixture_v325.html');fs.writeFileSync(scrollFile,fs.readFileSync(path.join(ROOT,'assets','reader_template.html'),'utf8').replace('__READER_DATA__',JSON.stringify(scrollFixture)));
+  await navigate(scrollFile);await select('fs','24');await select('lh','2.0');await select('th','light');
+  const scrollCheck=async()=>{
+    await evaluate('window.scrollTo(0,document.documentElement.scrollHeight)');await sleep(120);
+    return evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {gap:document.documentElement.style.getPropertyValue('--bottom-gap'),footerH:Math.round(fr.height),aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1,right:lr.right<=document.documentElement.clientWidth+1,text:last.textContent.slice(-6)}})()`);
+  };
+  const desktopScroll=await scrollCheck();
+  test('桌面长文最后一个字完整可见且不被footer遮挡',desktopScroll.aboveFooter&&desktopScroll.belowHeader&&desktopScroll.right,{desktopScroll});
+  await evaluate('if(!state.hl)state.hl=true;applySettings();render()');await sleep(80);
+  await evaluate('focusAt(sents.length-1)');await sleep(280);
+  const lastFocus=await evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1}})()`);
+  test('桌面最后一句聚焦后仍完整可见',lastFocus.cur===lastFocus.total-1&&lastFocus.aboveFooter&&lastFocus.belowHeader,lastFocus);
+  await evaluate('focusAt(0)');await sleep(280);
+  const firstFocus=await evaluate(`(()=>{const h=document.querySelector('header'),first=document.querySelector('.sent');const fr=h.getBoundingClientRect(),lr=first.getBoundingClientRect();return {cur:state.cur,visible:lr.top>=fr.bottom-1&&lr.bottom<=window.innerHeight}})()`);
+  test('桌面第一句聚焦后不被工具栏遮挡',firstFocus.cur===0&&firstFocus.visible,firstFocus);
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await sleep(120);
+  const mobileScroll=await scrollCheck();
+  test('390px长文末行完整可见且无横向滚动',mobileScroll.aboveFooter&&mobileScroll.belowHeader&&mobileScroll.right&&!(await evaluate('document.documentElement.scrollWidth>document.documentElement.clientWidth')),mobileScroll);
+  await evaluate('focusAt(sents.length-1)');await sleep(280);
+  const mobileLastFocus=await evaluate(`(()=>{const f=document.getElementById('readerFooter'),h=document.querySelector('header'),last=[...document.querySelectorAll('.sent')].at(-1);const fr=f.getBoundingClientRect(),hr=h.getBoundingClientRect(),lr=last.getBoundingClientRect();return {cur:state.cur,total:sents.length,aboveFooter:lr.bottom<=fr.top+1,belowHeader:lr.top>=hr.bottom-1}})()`);
+  test('390px最后一句聚焦后仍完整可见',mobileLastFocus.cur===mobileLastFocus.total-1&&mobileLastFocus.aboveFooter&&mobileLastFocus.belowHeader,mobileLastFocus);
+  await screenshot('07-v325-mobile-scroll.png');
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});await sleep(100);
   const mobile=await evaluate(`({overflow:document.documentElement.scrollWidth>document.documentElement.clientWidth,minButton:Math.min(...[...document.querySelectorAll('.tbtn')].map(x=>x.getBoundingClientRect().height)),width:document.documentElement.clientWidth})`);

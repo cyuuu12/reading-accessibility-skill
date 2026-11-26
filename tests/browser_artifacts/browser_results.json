@@ -1,7 +1,7 @@
 {
   "browser": "Chrome headless (CDP)",
-  "timestamp": "2026-11-25T14:16:49.435Z",
-  "passed": 59,
+  "timestamp": "2026-11-26T03:23:47.084Z",
+  "passed": 64,
   "failed": 0,
   "results": [
     {
@@ -261,8 +261,7 @@
       "detail": {
         "cur": -1,
         "fs": "18",
-        "th": "light",
-        "mode": "聚焦阅读"
+        "th": "light"
       }
     },
     {
@@ -339,6 +338,20 @@
         "cur": 0,
         "active": true,
         "same": true,
+        "dimColor": "rgb(95, 95, 95)",
+        "activeColor": "rgb(26, 26, 26)",
+        "dimmed": 6
+      }
+    },
+    {
+      "name": "原文模式其他文字实际减淡且当前句正常",
+      "status": "通过",
+      "detail": {
+        "cur": 0,
+        "active": true,
+        "same": true,
+        "dimColor": "rgb(95, 95, 95)",
+        "activeColor": "rgb(26, 26, 26)",
         "dimmed": 6
       }
     },
@@ -348,27 +361,22 @@
       "detail": ""
     },
     {
-      "name": "模式切换保留当前阅读位置",
+      "name": "统一视图无模式按钮",
       "status": "通过",
       "detail": {
-        "id": "s1b0",
-        "top": 123
+        "view": "assisted",
+        "hl": true,
+        "allExpanded": false
       }
     },
     {
-      "name": "快速浏览速览不默认减淡",
+      "name": "统一视图默认折叠跳读且原文/高亮可用",
       "status": "通过",
-      "detail": ""
-    },
-    {
-      "name": "完整阅读一次展示全部原文",
-      "status": "通过",
-      "detail": ""
-    },
-    {
-      "name": "返回聚焦阅读跳读恢复可逆折叠",
-      "status": "通过",
-      "detail": ""
+      "detail": {
+        "view": "assisted",
+        "hl": true,
+        "allExpanded": false
+      }
     },
     {
       "name": "标题渲染h1/h2/h3且文字正确",
@@ -564,7 +572,7 @@
       }
     },
     {
-      "name": "模式切换不改变未聚焦同区背景",
+      "name": "未聚焦同区背景稳定",
       "status": "通过",
       "detail": {
         "beforeModeBg": "rgb(255, 242, 233)",
@@ -641,6 +649,32 @@
       ]
     },
     {
+      "name": "普通正文统一列宽且左边缘对齐",
+      "status": "通过",
+      "detail": {
+        "alignment": [
+          {
+            "k": "精读",
+            "left": 280,
+            "textLeft": 280,
+            "maxWidth": "648px"
+          },
+          {
+            "k": "速览",
+            "left": 280,
+            "textLeft": 280,
+            "maxWidth": "648px"
+          },
+          {
+            "k": "跳读",
+            "left": 280,
+            "textLeft": 280,
+            "maxWidth": "648px"
+          }
+        ]
+      }
+    },
+    {
       "name": "light主题跳读仍无填充且预览可读",
       "status": "通过",
       "detail": {
@@ -708,6 +742,60 @@
         "fg": "rgb(46, 42, 32)",
         "bg": "rgb(244, 236, 216)",
         "contrast": 12.1483716308543
+      }
+    },
+    {
+      "name": "桌面长文最后一个字完整可见且不被footer遮挡",
+      "status": "通过",
+      "detail": {
+        "desktopScroll": {
+          "gap": "69px",
+          "footerH": 61,
+          "aboveFooter": true,
+          "belowHeader": true,
+          "right": true,
+          "text": "十像素留白。"
+        }
+      }
+    },
+    {
+      "name": "桌面最后一句聚焦后仍完整可见",
+      "status": "通过",
+      "detail": {
+        "cur": 47,
+        "total": 48,
+        "aboveFooter": true,
+        "belowHeader": true
+      }
+    },
+    {
+      "name": "桌面第一句聚焦后不被工具栏遮挡",
+      "status": "通过",
+      "detail": {
+        "cur": 0,
+        "visible": true
+      }
+    },
+    {
+      "name": "390px长文末行完整可见且无横向滚动",
+      "status": "通过",
+      "detail": {
+        "gap": "69px",
+        "footerH": 61,
+        "aboveFooter": true,
+        "belowHeader": true,
+        "right": true,
+        "text": "十像素留白。"
+      }
+    },
+    {
+      "name": "390px最后一句聚焦后仍完整可见",
+      "status": "通过",
+      "detail": {
+        "cur": 47,
+        "total": 48,
+        "aboveFooter": true,
+        "belowHeader": true
       }
     },
     {

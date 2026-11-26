@@ -11,6 +11,8 @@
     --skim-border:#9CABB8; --skip-border:#D7DDE3;
     --hl-bg:#fff3cd; --hl-border:#a87500; --control-bg:#f6f8fa;
     --reader-font-size:18px; --reader-line-height:1.7;
+    --body-max-width:36em; --header-height:64px;
+    --bottom-gap:calc(78px + env(safe-area-inset-bottom,0px));
   }
   [data-theme="dark"]{
     --bg:#1e1e1e; --fg:#e6e6e6; --fg-dim:#a3a3a3; --muted:#aaa; --accent:#82bfff;
@@ -26,6 +28,7 @@
   }
   *{box-sizing:border-box}
   html,body{overflow-x:hidden}
+  html{scroll-padding-bottom:var(--bottom-gap)}
   body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,"Microsoft YaHei","PingFang SC",sans-serif}
   header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--muted);padding:8px 12px;z-index:10}
   .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -39,13 +42,13 @@
   .progress{height:4px;background:var(--control-bg);border-radius:2px;overflow:hidden;margin-top:8px}
   .progress>div{height:100%;width:0;background:var(--accent);transition:width .15s}
   .help{font-size:.78em;color:var(--muted);margin:6px 0 0}
-  main{max-width:760px;margin:0 auto;padding:18px 14px 90px;font-size:var(--reader-font-size);line-height:var(--reader-line-height)}
+  main{max-width:760px;margin:0 auto;padding:18px 14px var(--bottom-gap);font-size:var(--reader-font-size);line-height:var(--reader-line-height)}
   /* 连续视觉区域：统一强度填充，区域起点留 10px；边框自然收口，无卡片外框或阴影。 */
   .region{margin:10px 0 18px;border-left:3px solid transparent;border-radius:3px}
   .region[data-pri="精读"]{border-left-color:var(--focus-border)}
   .region[data-pri="速览"]{border-left:2px solid var(--skim-border)}
   .region[data-pri="跳读"]{border-left:2px dashed var(--skip-border)}
-  .block{margin:0;padding:10px 12px;color:var(--fg);font-size:var(--reader-font-size);line-height:var(--reader-line-height);overflow-wrap:anywhere;transition:color .15s,background-color .15s}
+  .block{margin:0;padding:10px 12px 10px 10px;max-width:var(--body-max-width);color:var(--fg);font-size:var(--reader-font-size);line-height:var(--reader-line-height);overflow-wrap:anywhere;transition:color .15s,background-color .15s}
   .block.structural{background:transparent;border:0;padding:6px 0;color:var(--fg)}
   .heading{margin:18px 0 10px;padding:0;border:0;background:transparent;color:var(--fg);font-weight:700;line-height:1.4}
   h1.heading{font-size:calc(var(--reader-font-size)*1.4);margin-top:8px}
@@ -57,31 +60,33 @@
   .region>.block:last-child{border-bottom-left-radius:3px}
   .region[data-pri="精读"] .block{background:var(--focus-fill)}
   /* 速览是清晰基准态：不删减、不染色、不降低透明度，仅以行长和间距辅助排版。 */
-  .region[data-pri="速览"] .block{max-width:36em;padding-top:15px;padding-bottom:15px;font-weight:400;background:transparent}
-  .region[data-pri="跳读"] .block{background:transparent}
+  .region[data-pri="速览"] .block{padding-top:15px;padding-bottom:15px;padding-left:11px;font-weight:400;background:transparent}
+  .skip-fold .block{padding-left:11px;background:transparent}
   .block strong{font-weight:700;color:inherit}
   .block[data-pri="精读"] strong{color:var(--em-fg)}
-  .sent{padding:1px 2px;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+  .sent{padding:1px 2px;border-radius:2px;-webkit-box-decoration-break:clone;box-decoration-break:clone;scroll-margin-top:calc(var(--header-height) + 8px);scroll-margin-bottom:var(--bottom-gap)}
   .sent.hl-on{cursor:pointer}
   .sent.hl-on:hover:not(.active){background:var(--control-bg)}
   .sent.active,.sent.hl-on.active{background:var(--hl-bg);box-shadow:inset 2px 0 0 var(--hl-border);-webkit-box-decoration-break:clone;box-decoration-break:clone}
   .block.dimmed,.original-block.dimmed{color:var(--fg-dim)}
+  body.focus-active #original-full{color:var(--fg-dim)}
+  body.focus-active #original-full .sent.active{color:var(--fg)}
   .block.dimmed strong{color:inherit}
   /* 聚焦期间静态块级填充让位；边框和局部加粗仍保留。 */
   body.focus-active .region[data-pri] .block{background:transparent}
   body.focus-active .skip-fold{background:transparent}
   /* 跳读：无填充、低对比虚线弱边；识别靠预览与折叠行为，不靠灰底。 */
   .skip-fold{margin:0 0 18px;background:transparent;border-left:2px dashed var(--skip-border);color:var(--fg)}
-  .skip-fold>summary{cursor:pointer;list-style:none;min-height:44px;padding:10px 12px;display:flex;gap:10px;align-items:baseline;font-size:var(--reader-font-size);line-height:var(--reader-line-height)}
+  .skip-fold>summary{cursor:pointer;list-style:none;min-height:44px;padding:10px 12px 10px 11px;display:flex;gap:10px;align-items:baseline;font-size:var(--reader-font-size);line-height:var(--reader-line-height)}
   .skip-fold>summary::-webkit-details-marker{display:none}
   .skip-preview{color:var(--muted);flex:1}
   .skip-action{flex:none;color:var(--muted);font-size:.78em;white-space:nowrap}
   .skip-fold .block{background:transparent}
   .origtext{white-space:pre-wrap;overflow-wrap:anywhere;font-size:var(--reader-font-size);line-height:var(--reader-line-height);max-width:none;font-weight:400;background:transparent}
   #original-full,#original-full .original-block{margin:0;padding:0;border:0;border-radius:0;box-shadow:none;color:var(--fg);background:transparent;font:inherit;font-weight:400;text-decoration:none}
-  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 14px;display:flex;justify-content:space-between;align-items:center;font-size:.82em;color:var(--muted);z-index:10}
+  footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--muted);padding:8px 14px max(8px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;font-size:.82em;color:var(--muted);z-index:10}
   footer button{font-size:.85em;min-height:44px;min-width:44px;padding:6px 14px;border:1px solid var(--muted);background:var(--bg);color:var(--fg);border-radius:6px;cursor:pointer}
-  @media(max-width:600px){main{padding:14px 10px 90px}.toolbar{gap:4px}.toolbar label{font-size:.75em}.region[data-pri="速览"] .block{max-width:100%}.skip-fold>summary{flex-wrap:wrap;gap:2px 8px}}
+  @media(max-width:600px){main{padding:14px 10px var(--bottom-gap)}.toolbar{gap:4px}.toolbar label{font-size:.75em}.skip-fold>summary{flex-wrap:wrap;gap:2px 8px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -92,7 +97,6 @@
     <label>字号<select id="fs"><option>16</option><option selected>18</option><option>20</option><option>22</option><option>24</option></select></label>
     <label>行距<select id="lh"><option value="1.5">紧凑</option><option selected value="1.7">标准</option><option value="2.0">宽松</option></select></label>
     <label>背景<select id="th"><option selected value="light">白</option><option value="sepia">护眼</option><option value="dark">深色</option></select></label>
-    <button class="tbtn" id="modeBtn">模式：聚焦</button>
     <button class="tbtn" id="hlBtn">高亮：关</button>
     <button class="tbtn" id="origAll">查看原文</button>
     <button class="tbtn" id="expandAll">全部展开</button>
@@ -102,29 +106,41 @@
   </div>
 </header>
 <main id="root"></main>
-<footer>
+<footer id="readerFooter">
   <span id="pos">未开始</span>
   <span><button id="prev">← 上一句</button> <button id="next">下一句 →</button></span>
 </footer>
 <script>
 const DATA={"title":"标题层级测试","mode":"聚焦阅读","segments":[{"seg_no":1,"original":"文档主标题","sentences":["文档主标题"],"blocks":[{"text":"文档主标题","role":"标题","heading_level":0,"priority":null,"sentences":["文档主标题"],"preview":null}]},{"seg_no":2,"original":"一级章节","sentences":["一级章节"],"blocks":[{"text":"一级章节","role":"标题","heading_level":1,"priority":null,"sentences":["一级章节"],"preview":null}]},{"seg_no":3,"original":"二级章节","sentences":["二级章节"],"blocks":[{"text":"二级章节","role":"标题","heading_level":2,"priority":null,"sentences":["二级章节"],"preview":null}]},{"seg_no":4,"original":"正文一句。","sentences":["正文一句。"],"blocks":[{"text":"正文一句。","role":"核心论点","priority":"精读","sentences":["正文一句。"],"preview":null}]}],"original_text":"文档主标题\n\n一级章节\n\n二级章节\n\n正文一句。","conservative":false};
 const root=document.getElementById('root');
+const headerEl=document.querySelector('header');
+const footerEl=document.getElementById('readerFooter');
 const LS_KEY='reading-accessibility-v232';
-let state=Object.assign({fs:'18',lh:'1.7',th:'light',mode:DATA.mode||'聚焦阅读',hl:false,view:'assisted',cur:-1,allExpanded:false},loadLS());
+const savedState=loadLS();
+delete savedState.mode;
+let state=Object.assign({fs:'18',lh:'1.7',th:'light',hl:false,view:'assisted',cur:-1,allExpanded:false},savedState);
 let sents=[],foldState={};
 const entries=[];
 DATA.segments.forEach(seg=>(seg.blocks||[]).forEach((block,bi)=>entries.push({segNo:seg.seg_no,block,id:'s'+seg.seg_no+'b'+bi,paraStart:bi===0})));
 const originalText=typeof DATA.original_text==='string'?DATA.original_text:DATA.segments.map(s=>s.original||'').join('\n\n');
 
 function loadLS(){try{return JSON.parse(localStorage.getItem(LS_KEY))||{}}catch(e){return {}}}
-function saveLS(){try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh:state.lh,th:state.th,mode:state.mode,hl:state.hl,view:state.view,cur:state.cur,allExpanded:state.allExpanded}))}catch(e){}}
-function hasFoldable(){return entries.some(e=>e.block.priority==='跳读')&&state.mode!=='完整阅读'}
+function saveLS(){try{localStorage.setItem(LS_KEY,JSON.stringify({fs:state.fs,lh:state.lh,th:state.th,hl:state.hl,view:state.view,cur:state.cur,allExpanded:state.allExpanded}))}catch(e){}}
+function hasFoldable(){return entries.some(e=>e.block.priority==='跳读')}
+function updateScrollInsets(){
+  document.documentElement.style.setProperty('--header-height',Math.ceil(headerEl.getBoundingClientRect().height)+'px');
+  const gap=Math.ceil(footerEl.getBoundingClientRect().height)+8;
+  document.documentElement.style.setProperty('--bottom-gap',gap+'px');
+}
+new ResizeObserver(updateScrollInsets).observe(footerEl);
+new ResizeObserver(updateScrollInsets).observe(headerEl);
+window.addEventListener('resize',updateScrollInsets);
+window.addEventListener('orientationchange',()=>setTimeout(updateScrollInsets,120));
 function applySettings(){
   document.documentElement.style.setProperty('--reader-font-size',state.fs+'px');
   document.documentElement.style.setProperty('--reader-line-height',state.lh);
   document.documentElement.setAttribute('data-theme',state.th);
   document.getElementById('fs').value=state.fs;document.getElementById('lh').value=state.lh;document.getElementById('th').value=state.th;
-  document.getElementById('modeBtn').textContent='模式：'+state.mode.replace('阅读','');
   const hb=document.getElementById('hlBtn');hb.textContent='高亮：'+(state.hl?'开':'关');hb.classList.toggle('on',state.hl);
   document.getElementById('origAll').textContent=state.view==='assisted'?'查看原文':'返回辅助';
   syncExpandAll();
@@ -167,7 +183,7 @@ function makeBlock(entry){
     const sp=document.createElement('span');sp.className='sent'+(state.hl?' hl-on':'');sp.dataset.sentKey=entry.id+':'+si;
     appendEmphasized(sp,sentence,at,em);el.appendChild(sp);
     const record={el:sp,segNo:entry.segNo,blockEl:el,entry,key:sp.dataset.sentKey};sents.push(record);
-    sp.addEventListener('click',ev=>{ev.stopPropagation();if(state.hl)focusAt(sents.findIndex(x=>x.el===sp))});
+    sp.addEventListener('click',ev=>{const sel=window.getSelection?String(window.getSelection()):'';if(sel)return;ev.stopPropagation();if(state.hl)focusAt(sents.findIndex(x=>x.el===sp))});
     cursor=at+sentence.length;
   });
   if(cursor<text.length)appendEmphasized(el,text.slice(cursor),cursor,em);
@@ -205,7 +221,7 @@ function appendOriginalSentences(parent,text,entry){
     if(at>cursor)parent.appendChild(document.createTextNode(text.slice(cursor,at)));
     const sp=document.createElement('span');sp.className='sent'+(state.hl?' hl-on':'');sp.textContent=sentence;sp.dataset.sentKey=entry.id+':o'+si;
     const record={el:sp,segNo:entry.segNo,blockEl:parent,entry,key:sp.dataset.sentKey};sents.push(record);
-    sp.addEventListener('click',ev=>{ev.stopPropagation();if(state.hl)focusAt(sents.findIndex(x=>x.el===sp))});
+    sp.addEventListener('click',ev=>{const sel=window.getSelection?String(window.getSelection()):'';if(sel)return;ev.stopPropagation();if(state.hl)focusAt(sents.findIndex(x=>x.el===sp))});
     parent.appendChild(sp);wrote=true;cursor=at+sentence.length;
   });
   if(cursor<text.length)parent.appendChild(document.createTextNode(text.slice(cursor)));
@@ -224,7 +240,7 @@ function renderAssisted(){
   while(i<entries.length){
     if(isHeading(entries[i])){root.appendChild(makeHeading(entries[i]));i++;continue}
     if(structuralBoundary(entries[i])&&!(entries[i].block.priority||'速览')){const el=document.createElement('div');el.className='block structural';el.dataset.pri='';el.dataset.blockId=entries[i].id;el.dataset.seg=entries[i].segNo;el.textContent=entries[i].block.text||'';root.appendChild(el);i++;continue}
-    const pri=entries[i].block.priority||'速览';const folded=pri==='跳读'&&state.mode!=='完整阅读';let j=i+1;
+    const pri=entries[i].block.priority||'速览';const folded=pri==='跳读';let j=i+1;
     if(folded){while(j<entries.length&&(entries[j].block.priority||'速览')==='跳读'&&entries[j].block.role===entries[i].block.role)j++;root.appendChild(makeSkipGroup(entries.slice(i,j)))}
     else{if(!structuralBoundary(entries[i]))while(j<entries.length&&(entries[j].block.priority||'速览')===pri&&!structuralBoundary(entries[j]))j++;const region=document.createElement('section');region.className='region';region.dataset.pri=pri;entries.slice(i,j).forEach(e=>region.appendChild(makeBlock(e)));root.appendChild(region)}
     i=j;
@@ -246,7 +262,16 @@ function applyFocus(){
 function clearFocus(){state.cur=-1;applyFocus();updatePos();saveLS()}
 function focusAt(i){
   if(!state.hl||i<0||i>=sents.length||!visible(sents[i].el))return;
-  state.cur=i;sents[i].el.scrollIntoView({block:'center',behavior:'smooth'});applyFocus();updatePos();saveLS();
+  state.cur=i;
+  const el=sents[i].el,rect=el.getBoundingClientRect();
+  const safeTop=headerEl.getBoundingClientRect().bottom+8;
+  const safeBottom=footerEl.getBoundingClientRect().top-8;
+  const space=safeBottom-safeTop;
+  if(space>0&&(rect.top<safeTop||rect.bottom>safeBottom)){
+    const targetTop=Math.max(safeTop,Math.min(safeBottom-Math.min(rect.height,space),(safeTop+safeBottom-rect.height)/2));
+    window.scrollBy({top:rect.top-targetTop,behavior:'smooth'});
+  }
+  applyFocus();updatePos();saveLS();
 }
 function updatePos(){
   document.getElementById('pbar').style.width=(sents.length?((state.cur+1)/sents.length*100):0)+'%';
@@ -256,9 +281,45 @@ function moveFocus(step){for(let i=state.cur+step;i>=0&&i<sents.length;i+=step){
 document.getElementById('next').addEventListener('click',()=>moveFocus(1));document.getElementById('prev').addEventListener('click',()=>moveFocus(-1));
 document.addEventListener('keydown',e=>{if(e.target.tagName==='SELECT')return;if(e.key==='Escape'){if(state.cur>=0)clearFocus();return}if(e.key==='ArrowRight')document.getElementById('next').click();if(e.key==='ArrowLeft')document.getElementById('prev').click()});
 document.querySelectorAll('header button,header select,footer button').forEach(el=>el.setAttribute('data-control','true'));
+function sentenceIndexAt(x,y){
+  let pos=null;
+  if(document.caretRangeFromPoint)pos=document.caretRangeFromPoint(x,y);
+  else if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);pos=p?{startContainer:p.offsetNode,startOffset:p.offset}:null}
+  if(!pos||pos.startContainer.nodeType!==Node.TEXT_NODE)return -1;
+  const sent=pos.startContainer.parentElement?.closest('.sent');
+  return sent?sents.findIndex(item=>item.el===sent):-1;
+}
+function caretTextPos(x,y){
+  let pos=null;
+  if(document.caretRangeFromPoint)pos=document.caretRangeFromPoint(x,y);
+  else if(document.caretPositionFromPoint){const p=document.caretPositionFromPoint(x,y);pos=p?{startContainer:p.offsetNode,startOffset:p.offset}:null}
+  return pos&&pos.startContainer.nodeType===Node.TEXT_NODE?pos:null;
+}
+function charRectAt(pos){
+  try{
+    const node=pos.startContainer,len=node.nodeValue.length;if(!len)return null;
+    const r=document.createRange();
+    let a=Math.min(pos.startOffset,len-1);r.setStart(node,a);r.setEnd(node,a+1);
+    const rect=r.getBoundingClientRect();
+    return rect&&rect.width>=0&&(rect.height>0)?rect:null;
+  }catch(e){return null}
+}
+function pointInRects(el,x,y,pad){
+  return Array.from(el.getClientRects()).some(r=>x>=r.left-pad&&x<=r.right+pad&&y>=r.top-pad&&y<=r.bottom+pad);
+}
 root.addEventListener('click',ev=>{
-  if(ev.target!==root)return;
-  if(ev.target.closest('.sentence,.sent,details,[data-control]'))return;
+  const target=ev.target;
+  if(target.closest('.heading,summary,button,select,input,textarea,a,label,[data-control]'))return;
+  const x=ev.clientX,y=ev.clientY;
+  const sentenceIndex=sentenceIndexAt(x,y);
+  if(sentenceIndex>=0){
+    if(pointInRects(sents[sentenceIndex].el,x,y,3)){if(state.hl)focusAt(sentenceIndex);return}
+  }
+  const pos=caretTextPos(x,y);
+  if(pos){
+    const rect=charRectAt(pos);
+    if(rect&&x>=rect.left-2&&x<=rect.right+2&&y>=rect.top-2&&y<=rect.bottom+2)return;
+  }
   const selection=window.getSelection?String(window.getSelection()):'';
   if(selection)return;
   if(state.hl&&state.cur>=0)clearFocus();
@@ -268,12 +329,11 @@ document.getElementById('lh').addEventListener('change',e=>{state.lh=e.target.va
 document.getElementById('th').addEventListener('change',e=>{state.th=e.target.value;applySettings();saveLS()});
 document.getElementById('hlBtn').addEventListener('click',()=>{state.hl=!state.hl;if(!state.hl)state.cur=-1;applySettings();render();saveLS()});
 document.getElementById('origAll').addEventListener('click',()=>{state.view=state.view==='assisted'?'original':'assisted';state.cur=-1;render();saveLS()});
-document.getElementById('modeBtn').addEventListener('click',()=>{const ms=['完整阅读','聚焦阅读','快速浏览'];state.mode=ms[(ms.indexOf(state.mode)+1)%ms.length];render();saveLS()});
 document.getElementById('expandAll').addEventListener('click',()=>{
   const folds=Array.from(document.querySelectorAll('.skip-fold'));if(!folds.length)return;
   const open=!folds.every(x=>x.open);folds.forEach(d=>{d.open=open;foldState[d.dataset.skipGroup]=open});state.allExpanded=open;applySettings();saveLS();
 });
-applySettings();render();
+applySettings();render();updateScrollInsets();
 </script>
 </body>
 </html>

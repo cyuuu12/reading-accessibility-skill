@@ -59,6 +59,8 @@ def build_data_from_text(text, title="阅读辅助", analysis=None):
         result.pop("_meta", None)
         return result
     except Exception:
+        import traceback as _tb
+        _tb.print_exc()
         segs_raw = [s.strip() for s in re.split(r'\n\s*\n', text.strip()) if s.strip()]
         segments = []
         for i, s in enumerate(segs_raw, 1):
